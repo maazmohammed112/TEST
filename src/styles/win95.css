@@ -1,0 +1,59 @@
+.win95 {
+  --background: #c0c0c0;
+  --foreground: #000000;
+  --card: #c0c0c0;
+  --card-foreground: #000000;
+  --popover: #c0c0c0;
+  --popover-foreground: #000000;
+  --primary: #000080;
+  --primary-foreground: #ffffff;
+  --secondary: #dfdfdf;
+  --secondary-foreground: #000000;
+  --muted: #a0a0a0;
+  --muted-foreground: #404040;
+  --accent: #000080;
+  --accent-foreground: #ffffff;
+  --destructive: #ff0000;
+  --destructive-foreground: #ffffff;
+  --border: #808080;
+  --input: #ffffff;
+  --ring: #000080;
+  --radius: 0px;
+}
+
+.win95 * {
+  border-radius: 0 !important;
+}
+
+.win95 .card,
+.win95 .button,
+.win95 .input {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+}
+
+.win95 .button:active {
+  border-color: #808080 #ffffff #ffffff #808080;
+}
+
+.win95 .window-title {
+  background: #000080;
+  color: #ffffff;
+  font-weight: bold;
+  padding: 2px 4px;
+}
+
+.win95 .window-content {
+  background: #c0c0c0;
+  padding: 8px;
+  border: 2px solid;
+  border-color: #dfdfdf #808080 #808080 #dfdfdf;
+}
+
+.win95 .pixel-border {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+}
