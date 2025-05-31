@@ -1,14 +1,15 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Camera, Edit, Save, X, Heart } from 'lucide-react';
+import { Camera, Edit, Save, X, Heart, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DeleteAccountDialog } from '@/components/user/DeleteAccountDialog';
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfileData {
   id: string;
@@ -31,6 +32,7 @@ export default function UserProfile() {
   const [stats, setStats] = useState<UserStats>({ posts: 0, friends: 0, likes: 0 });
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
     username: ''
@@ -38,6 +40,7 @@ export default function UserProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUserProfile();
@@ -198,6 +201,10 @@ export default function UserProfile() {
     }
   };
 
+  const handleAccountDeleted = () => {
+    navigate('/login');
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-2xl mx-auto space-y-4">
@@ -226,11 +233,11 @@ export default function UserProfile() {
         <CardHeader className="text-center pb-3">
           <div className="relative inline-block">
             <Avatar className="w-16 h-16 mx-auto mb-2 border-2 border-social-green">
-              {user.avatar ? (
+              {user?.avatar ? (
                 <AvatarImage src={user.avatar} alt={user.name} />
               ) : (
                 <AvatarFallback className="bg-social-dark-green text-white font-pixelated text-sm">
-                  {user.name ? user.name.substring(0, 2).toUpperCase() : 'U'}
+                  {user?.name ? user.name.substring(0, 2).toUpperCase() : 'U'}
                 </AvatarFallback>
               )}
             </Avatar>
@@ -255,21 +262,31 @@ export default function UserProfile() {
           {!isEditing ? (
             <>
               <CardTitle className="font-pixelated text-sm text-foreground mb-1">
-                {user.name}
+                {user?.name}
               </CardTitle>
               <p className="text-xs text-muted-foreground font-pixelated mb-1">
-                @{user.username}
+                @{user?.username}
               </p>
               <p className="text-xs text-muted-foreground font-pixelated mb-3">
-                Member since {new Date(user.created_at).toLocaleDateString()}
+                Member since {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
               </p>
-              <Button
-                onClick={() => setIsEditing(true)}
-                className="bg-social-green hover:bg-social-light-green text-white font-pixelated text-xs h-6"
-              >
-                <Edit className="h-2 w-2 mr-1" />
-                Edit Profile
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  onClick={() => setIsEditing(true)}
+                  className="bg-social-green hover:bg-social-light-green text-white font-pixelated text-xs h-6"
+                >
+                  <Edit className="h-2 w-2 mr-1" />
+                  Edit Profile
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="w-full font-pixelated text-xs h-6"
+                >
+                  <Trash2 className="h-2 w-2 mr-1" />
+                  Delete Account
+                </Button>
+              </div>
             </>
           ) : (
             <div className="space-y-2 text-left">
@@ -343,6 +360,13 @@ export default function UserProfile() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Delete Account Dialog */}
+      <DeleteAccountDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onAccountDeleted={handleAccountDeleted}
+      />
     </div>
   );
 }
