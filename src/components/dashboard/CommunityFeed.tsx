@@ -69,7 +69,71 @@ export function CommunityFeed() {
   useEffect(() => {
     getCurrentUser();
     fetchPosts();
+
+    // Set up real-time subscriptions
+    const postsChannel = supabase
+      .channel('posts-channel')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'posts' }, 
+        handlePostChange
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'likes' },
+        () => fetchPosts()
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'comments' },
+        () => fetchPosts()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(postsChannel);
+    };
   }, []);
+
+  const handlePostChange = async (payload: any) => {
+    if (payload.eventType === 'INSERT') {
+      const { data: newPost } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            username,
+            avatar,
+            email,
+            created_at
+          ),
+          likes (
+            id,
+            user_id
+          ),
+          comments (
+            id,
+            content,
+            created_at,
+            user_id,
+            profiles:user_id (
+              name,
+              username,
+              avatar
+            )
+          )
+        `)
+        .eq('id', payload.new.id)
+        .single();
+
+      if (newPost) {
+        setPosts(prevPosts => [newPost, ...prevPosts]);
+      }
+    } else if (payload.eventType === 'DELETE') {
+      setPosts(prevPosts => prevPosts.filter(post => post.id !== payload.old.id));
+    } else if (payload.eventType === 'UPDATE') {
+      fetchPosts(); // Refresh all posts to ensure consistency
+    }
+  };
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -153,9 +217,6 @@ export function CommunityFeed() {
 
         if (error) throw error;
       }
-
-      // Refresh posts to get updated likes
-      fetchPosts();
     } catch (error) {
       console.error('Error handling like:', error);
       toast({
@@ -182,7 +243,6 @@ export function CommunityFeed() {
       if (error) throw error;
 
       setCommentInputs(prev => ({ ...prev, [postId]: '' }));
-      fetchPosts();
       
       toast({
         title: 'Comment added',
@@ -208,9 +268,6 @@ export function CommunityFeed() {
         .eq('id', deletePostId);
 
       if (error) throw error;
-
-      setPosts(prev => prev.filter(post => post.id !== deletePostId));
-      setDeletePostId(null);
       
       toast({
         title: 'Post deleted',
@@ -223,6 +280,8 @@ export function CommunityFeed() {
         title: 'Error',
         description: 'Failed to delete post',
       });
+    } finally {
+      setDeletePostId(null);
     }
   };
 
