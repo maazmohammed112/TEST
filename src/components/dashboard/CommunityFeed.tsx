@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, MessageCircle, MoreHorizontal, Trash2, User } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Trash2, User, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfileDialog } from '@/components/user/UserProfileDialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +65,7 @@ export function CommunityFeed() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -290,6 +292,10 @@ export function CommunityFeed() {
     setShowUserProfile(true);
   };
 
+  const handleImageClick = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+  };
+
   const timeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -406,11 +412,11 @@ export function CommunityFeed() {
 
                 {/* Post Image */}
                 {post.image_url && (
-                  <div className="mb-3">
+                  <div className="mb-3 cursor-pointer" onClick={() => handleImageClick(post.image_url!)}>
                     <img
                       src={post.image_url}
                       alt="Post image"
-                      className="w-full rounded-lg object-cover max-h-96"
+                      className="w-full rounded-lg object-cover max-h-96 hover:opacity-95 transition-opacity"
                     />
                   </div>
                 )}
@@ -507,6 +513,27 @@ export function CommunityFeed() {
           );
         })}
       </div>
+
+      {/* Image Viewer Dialog */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black/95">
+          <div className="relative">
+            <Button
+              onClick={() => setSelectedImage(null)}
+              size="icon"
+              variant="ghost"
+              className="absolute top-2 right-2 text-white hover:bg-white/20 z-10"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <img
+              src={selectedImage || ''}
+              alt="Full size"
+              className="w-full h-auto max-h-[80vh] object-contain"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* User Profile Dialog */}
       <UserProfileDialog
