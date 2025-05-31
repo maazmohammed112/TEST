@@ -332,26 +332,57 @@ export function CommunityFeed() {
       const isLiked = post?.likes.some(like => like.user_id === currentUser.id);
 
       if (isLiked) {
+        // Find the like ID to delete
+        const likeToDelete = post?.likes.find(like => like.user_id === currentUser.id);
+        if (!likeToDelete) return;
+
         const { error } = await supabase
           .from('likes')
           .delete()
-          .eq('post_id', postId)
-          .eq('user_id', currentUser.id);
+          .eq('id', likeToDelete.id);
 
         if (error) throw error;
+
+        // Optimistically update UI
+        setPosts(prevPosts => 
+          prevPosts.map(p => {
+            if (p.id === postId) {
+              return {
+                ...p,
+                likes: p.likes.filter(like => like.user_id !== currentUser.id)
+              };
+            }
+            return p;
+          })
+        );
       } else {
-        const { error } = await supabase
+        const { data: newLike, error } = await supabase
           .from('likes')
-          .insert({ post_id: postId, user_id: currentUser.id });
+          .insert({ post_id: postId, user_id: currentUser.id })
+          .select('id, user_id')
+          .single();
 
         if (error) throw error;
+
+        // Optimistically update UI
+        setPosts(prevPosts => 
+          prevPosts.map(p => {
+            if (p.id === postId) {
+              return {
+                ...p,
+                likes: [...p.likes, newLike]
+              };
+            }
+            return p;
+          })
+        );
       }
     } catch (error) {
       console.error('Error handling like:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to update like',
+        description: 'Failed to update like'
       });
     }
   };
