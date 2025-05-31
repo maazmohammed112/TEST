@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function RegisterForm() {
   const [email, setEmail] = useState('');
@@ -18,6 +19,7 @@ export function RegisterForm() {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<'checking' | 'available' | 'taken' | 'invalid' | 'idle'>('idle');
   const [emailStatus, setEmailStatus] = useState<'checking' | 'available' | 'taken' | 'idle'>('idle');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -115,6 +117,10 @@ export function RegisterForm() {
 
       if (emailStatus === 'taken') {
         throw new Error('An account with this email already exists');
+      }
+
+      if (!acceptedTerms) {
+        throw new Error('Please accept the terms and conditions');
       }
 
       const { data, error } = await supabase.auth.signUp({
@@ -336,10 +342,33 @@ export function RegisterForm() {
             )}
           </div>
 
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="terms" 
+              checked={acceptedTerms}
+              onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+              className="data-[state=checked]:bg-social-green data-[state=checked]:border-social-green"
+            />
+            <label
+              htmlFor="terms"
+              className="text-sm font-pixelated leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              I accept the{' '}
+              <a 
+                href="https://socialchatprivacypolicy.vercel.app/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-social-green hover:underline"
+              >
+                terms and conditions
+              </a>
+            </label>
+          </div>
+
           <Button 
             type="submit" 
             className="w-full bg-social-green hover:bg-social-light-green text-white font-pixelated" 
-            disabled={loading || usernameStatus === 'taken' || emailStatus === 'taken' || usernameStatus === 'checking' || emailStatus === 'checking' || usernameStatus === 'invalid'}
+            disabled={loading || usernameStatus === 'taken' || emailStatus === 'taken' || usernameStatus === 'checking' || emailStatus === 'checking' || usernameStatus === 'invalid' || !acceptedTerms}
           >
             {loading ? 'Creating Account...' : 'Create Account'}
           </Button>
