@@ -24,7 +24,15 @@ import NotFound from "./pages/NotFound";
 // Components
 import { AuthGuard } from "./components/common/AuthGuard";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5000,
+    },
+  },
+});
 
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -78,7 +86,6 @@ const App = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session check:', session?.user?.id);
       setSession(session);
-      // Add a small delay to show the loading animation
       setTimeout(() => setLoading(false), 1500);
     });
 
@@ -111,15 +118,15 @@ const App = () => {
             {/* Public Routes */}
             <Route 
               path="/" 
-              element={session ? <Navigate to="/dashboard\" replace /> : <Index />} 
+              element={session ? <Navigate to="/dashboard" replace /> : <Index />} 
             />
             <Route 
               path="/login" 
-              element={session ? <Navigate to="/dashboard\" replace /> : <Login />} 
+              element={session ? <Navigate to="/dashboard" replace /> : <Login />} 
             />
             <Route 
               path="/register" 
-              element={session ? <Navigate to="/dashboard\" replace /> : <Register />} 
+              element={session ? <Navigate to="/dashboard" replace /> : <Register />} 
             />
             
             {/* Protected Routes */}

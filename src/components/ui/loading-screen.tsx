@@ -1,4 +1,3 @@
-```tsx
 import React from 'react';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +8,7 @@ interface LoadingScreenProps {
 export function LoadingScreen({ className }: LoadingScreenProps) {
   return (
     <div className={cn(
-      "fixed inset-0 flex items-center justify-center bg-gradient-to-br from-social-light-green/20 to-white dark:from-social-dark-green/20 dark:to-background",
+      "fixed inset-0 flex items-center justify-center bg-gradient-to-br from-social-light-green/20 to-white dark:from-social-dark-green/20 dark:to-background z-50",
       className
     )}>
       <div className="text-center space-y-4">
@@ -32,4 +31,3 @@ export function LoadingScreen({ className }: LoadingScreenProps) {
     </div>
   );
 }
-```
