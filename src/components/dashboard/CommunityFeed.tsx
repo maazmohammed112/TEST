@@ -73,29 +73,30 @@ export function CommunityFeed() {
     fetchPosts();
 
     // Set up real-time subscriptions
-    const postsChannel = supabase
-      .channel('posts-channel')
+    const channel = supabase
+      .channel('posts-realtime')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'posts' }, 
         handlePostChange
       )
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'likes' },
-        () => fetchPosts()
+        handleLikeChange
       )
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'comments' },
-        () => fetchPosts()
+        handleCommentChange
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(postsChannel);
+      supabase.removeChannel(channel);
     };
   }, []);
 
   const handlePostChange = async (payload: any) => {
     if (payload.eventType === 'INSERT') {
+      // Fetch the complete post data with relationships
       const { data: newPost } = await supabase
         .from('posts')
         .select(`
@@ -133,7 +134,133 @@ export function CommunityFeed() {
     } else if (payload.eventType === 'DELETE') {
       setPosts(prevPosts => prevPosts.filter(post => post.id !== payload.old.id));
     } else if (payload.eventType === 'UPDATE') {
-      fetchPosts(); // Refresh all posts to ensure consistency
+      // Fetch updated post data
+      const { data: updatedPost } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            username,
+            avatar,
+            email,
+            created_at
+          ),
+          likes (
+            id,
+            user_id
+          ),
+          comments (
+            id,
+            content,
+            created_at,
+            user_id,
+            profiles:user_id (
+              name,
+              username,
+              avatar
+            )
+          )
+        `)
+        .eq('id', payload.new.id)
+        .single();
+
+      if (updatedPost) {
+        setPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.id === updatedPost.id ? updatedPost : post
+          )
+        );
+      }
+    }
+  };
+
+  const handleLikeChange = async (payload: any) => {
+    const postId = payload.new.post_id;
+    
+    // Fetch updated post data
+    const { data: updatedPost } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profiles:user_id (
+          id,
+          name,
+          username,
+          avatar,
+          email,
+          created_at
+        ),
+        likes (
+          id,
+          user_id
+        ),
+        comments (
+          id,
+          content,
+          created_at,
+          user_id,
+          profiles:user_id (
+            name,
+            username,
+            avatar
+          )
+        )
+      `)
+      .eq('id', postId)
+      .single();
+
+    if (updatedPost) {
+      setPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === postId ? updatedPost : post
+        )
+      );
+    }
+  };
+
+  const handleCommentChange = async (payload: any) => {
+    const postId = payload.new.post_id;
+    
+    // Fetch updated post data
+    const { data: updatedPost } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profiles:user_id (
+          id,
+          name,
+          username,
+          avatar,
+          email,
+          created_at
+        ),
+        likes (
+          id,
+          user_id
+        ),
+        comments (
+          id,
+          content,
+          created_at,
+          user_id,
+          profiles:user_id (
+            name,
+            username,
+            avatar
+          )
+        )
+      `)
+      .eq('id', postId)
+      .single();
+
+    if (updatedPost) {
+      setPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === postId ? updatedPost : post
+        )
+      );
     }
   };
 
