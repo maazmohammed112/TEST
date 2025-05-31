@@ -3,11 +3,11 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, MessageSquare, User, ArrowLeft, Search } from 'lucide-react';
+import { Send, MessageSquare, User, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Friend {
   id: string;
@@ -30,14 +30,12 @@ interface Message {
 
 export function Messages() {
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [filteredFriends, setFilteredFriends] = useState<Friend[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -95,7 +93,6 @@ export function Messages() {
       }
 
       setFriends(formattedFriends);
-      setFilteredFriends(formattedFriends);
     } catch (error) {
       console.error('Error fetching friends for messages:', error);
     } finally {
@@ -276,19 +273,6 @@ export function Messages() {
   }, [selectedFriend, currentUser]);
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredFriends(friends);
-      return;
-    }
-
-    const filtered = friends.filter(friend => 
-      friend.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      friend.username.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setFilteredFriends(filtered);
-  }, [searchQuery, friends]);
-
-  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
@@ -323,23 +307,15 @@ export function Messages() {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto h-[calc(100vh-60px)] bg-background rounded-lg shadow-lg overflow-hidden">
         <div className="flex h-full">
-          {/* Sidebar - Friends List */}
+          {/* Friends List */}
           <div className={`w-full md:w-80 border-r flex flex-col ${selectedFriend ? 'hidden md:flex' : ''}`}>
-            {/* Search Header */}
-            <div className="p-4 border-b bg-muted/30 sticky top-0 z-10">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search messages..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 font-pixelated text-sm"
-                />
-              </div>
+            {/* Friends List Header */}
+            <div className="p-4 border-b bg-muted/30">
+              <h2 className="font-pixelated text-sm font-medium">Messages</h2>
             </div>
 
             {/* Friends List - Scrollable */}
-            <div className="flex-1 overflow-y-auto">
+            <ScrollArea className="flex-1">
               {loading ? (
                 <div className="space-y-2 p-4">
                   {[1, 2, 3].map(i => (
@@ -352,9 +328,9 @@ export function Messages() {
                     </div>
                   ))}
                 </div>
-              ) : filteredFriends.length > 0 ? (
+              ) : friends.length > 0 ? (
                 <div className="p-2">
-                  {filteredFriends.map(friend => (
+                  {friends.map(friend => (
                     <div
                       key={friend.id}
                       onClick={() => {
@@ -388,27 +364,21 @@ export function Messages() {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full p-6 text-center">
                   <User className="h-12 w-12 text-muted-foreground mb-4" />
-                  {friends.length === 0 ? (
-                    <>
-                      <p className="text-muted-foreground mb-4">No friends yet</p>
-                      <Button variant="outline" asChild>
-                        <a href="/friends">Find Friends</a>
-                      </Button>
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground">No matching friends found</p>
-                  )}
+                  <p className="text-muted-foreground mb-4">No friends yet</p>
+                  <Button variant="outline" asChild>
+                    <a href="/friends">Find Friends</a>
+                  </Button>
                 </div>
               )}
-            </div>
+            </ScrollArea>
           </div>
 
           {/* Chat Area */}
           <div className={`flex-1 flex flex-col h-full ${!selectedFriend ? 'hidden md:flex' : ''}`}>
             {selectedFriend ? (
               <>
-                {/* Chat Header - Fixed */}
-                <div className="flex items-center gap-3 p-4 border-b bg-muted/30 sticky top-0 z-10">
+                {/* Chat Header */}
+                <div className="flex items-center gap-3 p-4 border-b bg-muted/30">
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -435,9 +405,9 @@ export function Messages() {
                 </div>
 
                 {/* Messages Area - Scrollable */}
-                <div 
+                <ScrollArea 
                   ref={messagesContainerRef}
-                  className="flex-1 overflow-y-auto p-4 space-y-4"
+                  className="flex-1 p-4 space-y-4"
                   style={{ 
                     height: 'calc(100vh - 180px)',
                     WebkitOverflowScrolling: 'touch'
@@ -476,10 +446,10 @@ export function Messages() {
                     </div>
                   ))}
                   <div ref={messagesEndRef} />
-                </div>
+                </ScrollArea>
 
-                {/* Message Input - Fixed at Bottom */}
-                <div className="p-4 border-t bg-background sticky bottom-0 left-0 right-0">
+                {/* Message Input */}
+                <div className="p-4 border-t bg-background">
                   <div className="flex gap-2">
                     <Textarea 
                       placeholder="Type a message..." 
