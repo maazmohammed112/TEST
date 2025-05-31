@@ -467,25 +467,25 @@ export function Messages() {
                   )}
                 </ScrollArea>
 
-                <div className="border-t bg-background p-3">
+                <div className="border-t bg-background p-2">
                   <div className="flex gap-2">
                     <Textarea 
                       placeholder="Type a message..." 
-                      className="flex-1 min-h-[40px] max-h-[120px] font-pixelated text-sm resize-none focus:ring-2 focus:ring-social-green/20 transition-all duration-200"
+                      className="flex-1 min-h-[36px] max-h-[120px] font-pixelated text-sm resize-none focus:ring-2 focus:ring-social-green/20 transition-all duration-200"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={handleKeyDown}
                       disabled={sendingMessage}
                     />
                     <Button 
-                      className="bg-social-green hover:bg-social-light-green text-white font-pixelated h-[40px] w-[40px] p-0 flex-shrink-0 hover:scale-105 transition-transform"
+                      className="bg-social-green hover:bg-social-light-green text-white font-pixelated h-[36px] w-[36px] p-0 flex-shrink-0 hover:scale-105 transition-transform"
                       onClick={sendMessage}
                       disabled={!newMessage.trim() || sendingMessage}
                     >
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1 font-pixelated">
+                  <p className="text-[9px] text-muted-foreground mt-0.5 font-pixelated">
                     Press Enter to send, Shift+Enter for new line
                   </p>
                 </div>
