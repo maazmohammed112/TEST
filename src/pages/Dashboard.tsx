@@ -135,30 +135,30 @@ export function Dashboard() {
         <StoriesContainer />
         
         {/* Post Box */}
-        <Card className="mx-2 mb-3 card-gradient animate-fade-in">
-          <CardContent className="p-3">
-            <div className="space-y-3">
+        <Card className="mx-2 mb-4 card-gradient animate-fade-in shadow-lg border-2 border-social-green/10">
+          <CardContent className="p-4">
+            <div className="space-y-4">
               <Textarea
-                placeholder="What's on your mind?"
+                placeholder="What's on your mind? Share your thoughts..."
                 value={postContent}
                 onChange={(e) => setPostContent(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full min-h-[48px] max-h-[120px] font-pixelated text-sm resize-none"
+                className="w-full min-h-[80px] max-h-[160px] font-pixelated text-sm resize-none focus:ring-2 focus:ring-social-green/20 transition-all duration-200"
                 disabled={isPosting}
               />
               
               {/* Image Preview */}
               {imagePreview && (
-                <div className="relative">
+                <div className="relative rounded-lg overflow-hidden border border-social-green/20">
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="max-h-48 rounded-lg object-cover"
+                    className="max-h-60 w-full object-cover"
                   />
                   <Button
                     variant="destructive"
                     size="icon"
-                    className="absolute top-2 right-2 h-6 w-6 rounded-full"
+                    className="absolute top-2 right-2 h-7 w-7 rounded-full shadow-lg hover:scale-105 transition-transform"
                     onClick={removeImage}
                   >
                     <X className="h-3 w-3" />
@@ -166,8 +166,8 @@ export function Dashboard() {
                 </div>
               )}
               
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <div className="flex items-center gap-3">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -179,14 +179,14 @@ export function Dashboard() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 font-pixelated text-xs"
+                    className="h-9 font-pixelated text-xs hover:bg-social-green/5 transition-colors"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isPosting}
                   >
-                    <ImageIcon className="h-3 w-3 mr-1" />
+                    <ImageIcon className="h-4 w-4 mr-2" />
                     Add Image
                   </Button>
-                  <p className="text-xs text-muted-foreground font-pixelated">
+                  <p className="text-xs text-muted-foreground font-pixelated hidden sm:block">
                     Press Enter to post
                   </p>
                 </div>
@@ -194,10 +194,10 @@ export function Dashboard() {
                   onClick={handlePost}
                   disabled={(!postContent.trim() && !selectedImage) || isPosting}
                   size="sm"
-                  className="bg-social-green hover:bg-social-light-green text-white font-pixelated h-8"
+                  className="bg-social-green hover:bg-social-light-green text-white font-pixelated h-9 px-4 hover:scale-105 transition-transform"
                 >
-                  <Send className="h-3 w-3 mr-1" />
-                  {isPosting ? 'Posting...' : 'Post'}
+                  <Send className="h-4 w-4 mr-2" />
+                  {isPosting ? 'Posting...' : 'Share Post'}
                 </Button>
               </div>
             </div>
@@ -205,7 +205,7 @@ export function Dashboard() {
         </Card>
         
         {/* Content */}
-        <div className="h-[calc(100vh-180px)] overflow-y-auto p-2">
+        <div className="h-[calc(100vh-220px)] overflow-y-auto p-2">
           <CommunityFeed />
         </div>
       </div>
