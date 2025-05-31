@@ -24,15 +24,7 @@ import NotFound from "./pages/NotFound";
 // Components
 import { AuthGuard } from "./components/common/AuthGuard";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-      staleTime: 5000,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -86,6 +78,7 @@ const App = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session check:', session?.user?.id);
       setSession(session);
+      // Add a small delay to show the loading animation
       setTimeout(() => setLoading(false), 1500);
     });
 
