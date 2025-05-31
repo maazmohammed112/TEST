@@ -1,4 +1,3 @@
-
 import { type Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
 
@@ -59,7 +58,7 @@ export default {
           "light-green": "hsl(var(--social-light-green))",
           "magenta": "hsl(var(--social-magenta))",
           "purple": "hsl(var(--social-purple))",
-          "blue": "hsl(var(--social-blue))", // Added social-blue color
+          "blue": "hsl(var(--social-blue))",
           "green": "hsl(var(--social-green))",
         },
       },
@@ -70,6 +69,7 @@ export default {
       },
       fontFamily: {
         sans: ["var(--font-sans)", ...fontFamily.sans],
+        pixelated: ["'Press Start 2P'", "cursive"],
       },
       keyframes: {
         "accordion-down": {
