@@ -507,5 +507,3 @@ export function Messages() {
 }
 
 export default Messages;
-
-export default Messages
