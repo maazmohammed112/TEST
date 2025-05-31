@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -209,7 +208,6 @@ export function Messages() {
     }
   };
 
-  // Auto-refresh friends list every 30 seconds
   useEffect(() => {
     fetchFriends();
     
@@ -224,7 +222,6 @@ export function Messages() {
     if (selectedFriend && currentUser) {
       fetchMessages(selectedFriend.id);
       
-      // Set up real-time subscription for messages with auto-refresh
       const channel = supabase
         .channel(`messages-${selectedFriend.id}-${currentUser.id}`)
         .on('postgres_changes', 
@@ -267,14 +264,12 @@ export function Messages() {
                 }
               }
             } else if (payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
-              // Refresh messages on update or delete
               fetchMessages(selectedFriend.id);
             }
           }
         )
         .subscribe();
 
-      // Also set up a periodic refresh every 10 seconds for reliability
       const messageInterval = setInterval(() => {
         fetchMessages(selectedFriend.id);
       }, 10000);
@@ -286,7 +281,6 @@ export function Messages() {
     }
   }, [selectedFriend, currentUser]);
 
-  // Auto-scroll when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -294,22 +288,20 @@ export function Messages() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto relative h-[calc(100vh-60px)]">
-        {/* Header */}
         <div className="flex items-center justify-between p-3 border-b bg-background sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <MessageSquare className="h-5 w-5 text-primary" />
-            <h1 className="font-pixelated text-lg font-bold">Messages</h1>
+            <h1 className="font-pixelated text-base">Messages</h1>
           </div>
           <Button
             onClick={() => setShowInfo(true)}
             size="icon"
-            className="h-8 w-8 rounded-full bg-social-blue hover:bg-social-blue/90 text-white"
+            className="h-7 w-7 rounded-full bg-social-blue hover:bg-social-blue/90 text-white hover-scale"
           >
             <Info className="h-4 w-4" />
           </Button>
         </div>
 
-        {/* Info Dialog */}
         <Dialog open={showInfo} onOpenChange={setShowInfo}>
           <DialogContent className="max-w-sm mx-auto">
             <DialogHeader>
@@ -334,9 +326,7 @@ export function Messages() {
           </DialogContent>
         </Dialog>
 
-        {/* Main Content */}
         <div className="flex-1 flex overflow-hidden h-[calc(100vh-140px)]">
-          {/* Friends list */}
           <div className={`w-full md:w-1/3 border-r overflow-hidden ${selectedFriend ? 'hidden md:block' : ''}`}>
             <div className="p-3 border-b bg-muted/30">
               <div className="flex items-center gap-2">
@@ -400,17 +390,15 @@ export function Messages() {
             </ScrollArea>
           </div>
           
-          {/* Chat area */}
           <div className={`flex-1 flex flex-col overflow-hidden ${!selectedFriend ? 'hidden md:flex' : ''}`}>
             {selectedFriend ? (
               <>
-                {/* Chat header */}
-                <div className="p-3 border-b flex items-center gap-3 bg-muted/30">
+                <div className="p-3 border-b flex items-center gap-3 bg-muted/30 sticky top-0 z-10">
                   <Button 
                     variant="ghost" 
                     size="icon" 
                     onClick={() => setSelectedFriend(null)}
-                    className="md:hidden h-8 w-8"
+                    className="md:hidden h-8 w-8 hover:bg-muted/50 transition-colors"
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
@@ -427,12 +415,8 @@ export function Messages() {
                     <p className="font-pixelated text-sm font-medium truncate">{selectedFriend.name}</p>
                     <p className="text-xs text-muted-foreground truncate">@{selectedFriend.username}</p>
                   </div>
-                  <div className="text-xs text-muted-foreground font-pixelated">
-                    Real-time
-                  </div>
                 </div>
                 
-                {/* Messages */}
                 <ScrollArea className="flex-1 p-4">
                   {messages.length > 0 ? (
                     <div className="space-y-4">
@@ -442,7 +426,7 @@ export function Messages() {
                           className={`flex ${message.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
                         >
                           <div className={`flex gap-2 max-w-[80%] ${message.sender_id === currentUser?.id ? 'flex-row-reverse' : ''}`}>
-                            <Avatar className="h-6 w-6">
+                            <Avatar className="h-6 w-6 mt-1">
                               {message.sender?.avatar ? (
                                 <AvatarImage src={message.sender.avatar} />
                               ) : (
@@ -451,15 +435,20 @@ export function Messages() {
                                 </AvatarFallback>
                               )}
                             </Avatar>
-                            <div className={`p-3 rounded-lg text-sm font-pixelated ${
-                              message.sender_id === currentUser?.id 
-                                ? 'bg-primary text-white ml-2' 
-                                : 'bg-muted mr-2'
-                            }`}>
-                              <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
-                              <p className="text-xs opacity-70 mt-2">
-                                {format(new Date(message.created_at), 'HH:mm')}
+                            <div>
+                              <p className={`text-xs font-pixelated mb-1 ${message.sender_id === currentUser?.id ? 'text-right' : ''}`}>
+                                {message.sender?.name}
                               </p>
+                              <div className={`p-3 rounded-lg text-sm font-pixelated ${
+                                message.sender_id === currentUser?.id 
+                                  ? 'bg-primary text-white' 
+                                  : 'bg-muted'
+                              }`}>
+                                <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
+                                <p className="text-xs opacity-70 mt-2">
+                                  {format(new Date(message.created_at), 'HH:mm')}
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -476,19 +465,18 @@ export function Messages() {
                   )}
                 </ScrollArea>
                 
-                {/* Message input */}
                 <div className="p-4 border-t bg-background">
                   <div className="flex gap-3">
                     <Textarea 
                       placeholder="Type a message..." 
-                      className="flex-1 min-h-[48px] max-h-[120px] font-pixelated text-sm resize-none"
+                      className="flex-1 min-h-[48px] max-h-[120px] font-pixelated text-sm resize-none focus:ring-2 focus:ring-social-green/20 transition-all duration-200"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={handleKeyDown}
                       disabled={sendingMessage}
                     />
                     <Button 
-                      className="bg-primary hover:bg-primary/90 text-white font-pixelated h-[48px] w-[48px] p-0 flex-shrink-0"
+                      className="bg-social-green hover:bg-social-light-green text-white font-pixelated h-[48px] w-[48px] p-0 flex-shrink-0 hover:scale-105 transition-transform"
                       onClick={sendMessage}
                       disabled={!newMessage.trim() || sendingMessage}
                     >

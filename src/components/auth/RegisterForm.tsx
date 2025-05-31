@@ -16,15 +16,21 @@ export function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
-  const [usernameStatus, setUsernameStatus] = useState<'checking' | 'available' | 'taken' | 'idle'>('idle');
+  const [usernameStatus, setUsernameStatus] = useState<'checking' | 'available' | 'taken' | 'invalid' | 'idle'>('idle');
   const [emailStatus, setEmailStatus] = useState<'checking' | 'available' | 'taken' | 'idle'>('idle');
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Check username availability
+  // Check username availability and format
   useEffect(() => {
     if (username.length < 3) {
       setUsernameStatus('idle');
+      return;
+    }
+
+    // Check username format first
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setUsernameStatus('invalid');
       return;
     }
 
@@ -101,6 +107,10 @@ export function RegisterForm() {
 
       if (usernameStatus === 'taken') {
         throw new Error('Username is already taken');
+      }
+
+      if (usernameStatus === 'invalid') {
+        throw new Error('Username can only contain letters, numbers, and underscores');
       }
 
       if (emailStatus === 'taken') {
@@ -210,7 +220,13 @@ export function RegisterForm() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase())}
                 required
-                className="font-pixelated pr-10"
+                className={`font-pixelated pr-10 ${
+                  usernameStatus === 'invalid' || usernameStatus === 'taken' 
+                    ? 'border-red-500 focus:ring-red-500' 
+                    : usernameStatus === 'available'
+                    ? 'border-green-500 focus:ring-green-500'
+                    : ''
+                }`}
               />
               {username.length >= 3 && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -220,7 +236,7 @@ export function RegisterForm() {
                   {usernameStatus === 'available' && (
                     <CheckCircle className="w-4 h-4 text-green-500" />
                   )}
-                  {usernameStatus === 'taken' && (
+                  {(usernameStatus === 'taken' || usernameStatus === 'invalid') && (
                     <XCircle className="w-4 h-4 text-red-500" />
                   )}
                 </div>
@@ -229,11 +245,14 @@ export function RegisterForm() {
             {username.length >= 3 && (
               <p className={`font-pixelated text-xs ${
                 usernameStatus === 'available' ? 'text-green-600' :
-                usernameStatus === 'taken' ? 'text-red-600' : 'text-gray-500'
+                usernameStatus === 'taken' ? 'text-red-600' :
+                usernameStatus === 'invalid' ? 'text-red-600' :
+                'text-gray-500'
               }`}>
                 {usernameStatus === 'checking' && 'Checking availability...'}
                 {usernameStatus === 'available' && 'Username is available'}
                 {usernameStatus === 'taken' && 'Username is already taken'}
+                {usernameStatus === 'invalid' && 'Username can only contain letters, numbers, and underscores'}
               </p>
             )}
           </div>
@@ -248,7 +267,13 @@ export function RegisterForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="font-pixelated pr-10"
+                className={`font-pixelated pr-10 ${
+                  emailStatus === 'taken' 
+                    ? 'border-red-500 focus:ring-red-500' 
+                    : emailStatus === 'available'
+                    ? 'border-green-500 focus:ring-green-500'
+                    : ''
+                }`}
               />
               {email.includes('@') && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -314,7 +339,7 @@ export function RegisterForm() {
           <Button 
             type="submit" 
             className="w-full bg-social-green hover:bg-social-light-green text-white font-pixelated" 
-            disabled={loading || usernameStatus === 'taken' || emailStatus === 'taken' || usernameStatus === 'checking' || emailStatus === 'checking'}
+            disabled={loading || usernameStatus === 'taken' || emailStatus === 'taken' || usernameStatus === 'checking' || emailStatus === 'checking' || usernameStatus === 'invalid'}
           >
             {loading ? 'Creating Account...' : 'Create Account'}
           </Button>
