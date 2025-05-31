@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, MessageCircle, MoreHorizontal, Trash2, User } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Trash2, User, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfileDialog } from '@/components/user/UserProfileDialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,7 +56,7 @@ interface Post {
   }>;
 }
 
-function CommunityFeed() {
+export function CommunityFeed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -64,51 +65,77 @@ function CommunityFeed() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     getCurrentUser();
     fetchPosts();
 
-    // Set up real-time subscription for posts
-    const channel = supabase
+    // Set up real-time subscriptions
+    const postsChannel = supabase
       .channel('posts-channel')
       .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'posts'
-        }, 
-        () => {
-          fetchPosts();
-        }
+        { event: '*', schema: 'public', table: 'posts' }, 
+        handlePostChange
       )
       .on('postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'comments'
-        },
-        () => {
-          fetchPosts();
-        }
+        { event: '*', schema: 'public', table: 'likes' },
+        () => fetchPosts()
       )
       .on('postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'likes'
-        },
-        () => {
-          fetchPosts();
-        }
+        { event: '*', schema: 'public', table: 'comments' },
+        () => fetchPosts()
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(postsChannel);
     };
   }, []);
+
+  const handlePostChange = async (payload: any) => {
+    if (payload.eventType === 'INSERT') {
+      const { data: newPost } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            username,
+            avatar,
+            email,
+            created_at
+          ),
+          likes (
+            id,
+            user_id
+          ),
+          comments (
+            id,
+            content,
+            created_at,
+            user_id,
+            profiles:user_id (
+              name,
+              username,
+              avatar
+            )
+          )
+        `)
+        .eq('id', payload.new.id)
+        .single();
+
+      if (newPost) {
+        setPosts(prevPosts => [newPost, ...prevPosts]);
+      }
+    } else if (payload.eventType === 'DELETE') {
+      setPosts(prevPosts => prevPosts.filter(post => post.id !== payload.old.id));
+    } else if (payload.eventType === 'UPDATE') {
+      fetchPosts(); // Refresh all posts to ensure consistency
+    }
+  };
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -163,47 +190,48 @@ function CommunityFeed() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to load posts'
+        description: 'Failed to load posts',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUserClick = (user: any) => {
-    setSelectedUser(user);
-    setShowUserProfile(true);
-  };
-
   const handleLike = async (postId: string) => {
     if (!currentUser) return;
 
-    const isLiked = posts.find(p => p.id === postId)?.likes.some(like => like.user_id === currentUser.id);
-
     try {
+      const post = posts.find(p => p.id === postId);
+      const isLiked = post?.likes.some(like => like.user_id === currentUser.id);
+
       if (isLiked) {
-        await supabase
+        const { error } = await supabase
           .from('likes')
           .delete()
           .eq('post_id', postId)
           .eq('user_id', currentUser.id);
+
+        if (error) throw error;
       } else {
-        await supabase
+        const { error } = await supabase
           .from('likes')
           .insert({ post_id: postId, user_id: currentUser.id });
+
+        if (error) throw error;
       }
     } catch (error) {
       console.error('Error handling like:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to process like'
+        description: 'Failed to update like',
       });
     }
   };
 
   const handleComment = async (postId: string) => {
-    if (!currentUser || !commentInputs[postId]?.trim()) return;
+    const content = commentInputs[postId]?.trim();
+    if (!content || !currentUser) return;
 
     try {
       const { error } = await supabase
@@ -211,18 +239,23 @@ function CommunityFeed() {
         .insert({
           post_id: postId,
           user_id: currentUser.id,
-          content: commentInputs[postId].trim()
+          content
         });
 
       if (error) throw error;
 
       setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+      
+      toast({
+        title: 'Comment added',
+        description: 'Your comment has been posted',
+      });
     } catch (error) {
-      console.error('Error posting comment:', error);
+      console.error('Error adding comment:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to post comment'
+        description: 'Failed to add comment',
       });
     }
   };
@@ -237,43 +270,75 @@ function CommunityFeed() {
         .eq('id', deletePostId);
 
       if (error) throw error;
-
-      setDeletePostId(null);
+      
       toast({
-        title: 'Success',
-        description: 'Post deleted successfully'
+        title: 'Post deleted',
+        description: 'Your post has been deleted',
       });
     } catch (error) {
       console.error('Error deleting post:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to delete post'
+        description: 'Failed to delete post',
       });
+    } finally {
+      setDeletePostId(null);
     }
   };
 
-  const toggleComments = (postId: string) => {
-    setShowComments(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
+  const handleUserClick = (user: any) => {
+    setSelectedUser(user);
+    setShowUserProfile(true);
   };
 
-  const timeAgo = (timestamp: string) => {
-    const date = new Date(timestamp);
+  const handleImageClick = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+  };
+
+  const timeAgo = (dateString: string) => {
+    const date = new Date(dateString);
     const now = new Date();
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (seconds < 60) return 'just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d`;
   };
+
+  const toggleComments = (postId: string) => {
+    setShowComments(prev => ({ ...prev, [postId]: !prev[postId] }));
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="w-full animate-pulse">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-muted rounded-full" />
+                <div className="space-y-1">
+                  <div className="w-24 h-3 bg-muted rounded" />
+                  <div className="w-16 h-2 bg-muted rounded" />
+                </div>
+              </div>
+              <div className="w-full h-20 bg-muted rounded mb-3" />
+              <div className="flex gap-4">
+                <div className="w-8 h-8 bg-muted rounded" />
+                <div className="w-8 h-8 bg-muted rounded" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -347,11 +412,11 @@ function CommunityFeed() {
 
                 {/* Post Image */}
                 {post.image_url && (
-                  <div className="mb-3">
+                  <div className="mb-3 cursor-pointer" onClick={() => handleImageClick(post.image_url!)}>
                     <img
                       src={post.image_url}
                       alt="Post image"
-                      className="w-full rounded-lg object-cover max-h-96"
+                      className="w-full rounded-lg object-cover max-h-96 hover:opacity-95 transition-opacity"
                     />
                   </div>
                 )}
@@ -449,6 +514,27 @@ function CommunityFeed() {
         })}
       </div>
 
+      {/* Image Viewer Dialog */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black/95">
+          <div className="relative">
+            <Button
+              onClick={() => setSelectedImage(null)}
+              size="icon"
+              variant="ghost"
+              className="absolute top-2 right-2 text-white hover:bg-white/20 z-10"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <img
+              src={selectedImage || ''}
+              alt="Full size"
+              className="w-full h-auto max-h-[80vh] object-contain"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* User Profile Dialog */}
       <UserProfileDialog
         open={showUserProfile}
@@ -479,5 +565,3 @@ function CommunityFeed() {
     </>
   );
 }
-
-export default CommunityFeed;

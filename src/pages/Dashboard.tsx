@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import CommunityFeed from '@/components/dashboard/CommunityFeed';
+import { CommunityFeed } from '@/components/dashboard/CommunityFeed';
 import { StoriesContainer } from '@/components/stories/StoriesContainer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
