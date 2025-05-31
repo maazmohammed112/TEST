@@ -288,18 +288,20 @@ export function Messages() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto relative h-[calc(100vh-60px)]">
-        <div className="flex items-center justify-between p-3 border-b bg-background sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            <h1 className="font-pixelated text-base">Messages</h1>
+        <div className="absolute top-0 left-0 right-0 z-20 bg-background border-b">
+          <div className="flex items-center justify-between p-3">
+            <div className="flex items-center gap-3">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              <h1 className="font-pixelated text-base">Messages</h1>
+            </div>
+            <Button
+              onClick={() => setShowInfo(true)}
+              size="icon"
+              className="h-7 w-7 rounded-full bg-social-blue hover:bg-social-blue/90 text-white hover-scale"
+            >
+              <Info className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            onClick={() => setShowInfo(true)}
-            size="icon"
-            className="h-7 w-7 rounded-full bg-social-blue hover:bg-social-blue/90 text-white hover-scale"
-          >
-            <Info className="h-4 w-4" />
-          </Button>
         </div>
 
         <Dialog open={showInfo} onOpenChange={setShowInfo}>
@@ -326,15 +328,15 @@ export function Messages() {
           </DialogContent>
         </Dialog>
 
-        <div className="flex-1 flex overflow-hidden h-[calc(100vh-140px)]">
-          <div className={`w-full md:w-1/3 border-r overflow-hidden ${selectedFriend ? 'hidden md:block' : ''}`}>
+        <div className="flex h-[calc(100vh-60px)] pt-[56px]">
+          <div className={`w-full md:w-1/3 border-r flex flex-col ${selectedFriend ? 'hidden md:flex' : ''}`}>
             <div className="p-3 border-b bg-muted/30">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 <h3 className="font-pixelated text-sm font-semibold">Contacts ({friends.length})</h3>
               </div>
             </div>
-            <ScrollArea className="h-full">
+            <ScrollArea className="flex-1">
               {loading ? (
                 <div className="space-y-2 p-3">
                   {[1, 2, 3].map(i => (
@@ -390,10 +392,10 @@ export function Messages() {
             </ScrollArea>
           </div>
           
-          <div className={`flex-1 flex flex-col overflow-hidden ${!selectedFriend ? 'hidden md:flex' : ''}`}>
+          <div className={`flex-1 flex flex-col ${!selectedFriend ? 'hidden md:flex' : ''}`}>
             {selectedFriend ? (
               <>
-                <div className="p-3 border-b flex items-center gap-3 bg-muted/30 sticky top-0 z-10">
+                <div className="border-b flex items-center gap-3 bg-background p-3 sticky top-0 z-10">
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -465,7 +467,7 @@ export function Messages() {
                   )}
                 </ScrollArea>
                 
-                <div className="p-4 border-t bg-background">
+                <div className="border-t bg-background p-4">
                   <div className="flex gap-3">
                     <Textarea 
                       placeholder="Type a message..." 
@@ -505,3 +507,5 @@ export function Messages() {
 }
 
 export default Messages;
+
+export default Messages
