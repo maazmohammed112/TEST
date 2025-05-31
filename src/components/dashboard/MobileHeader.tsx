@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { 
@@ -82,7 +81,6 @@ export function MobileHeader() {
       
       if (error) throw error;
       
-      // Force redirect to login page
       window.location.href = '/login';
     } catch (error: any) {
       toast({
@@ -117,6 +115,11 @@ export function MobileHeader() {
               <SheetContent side="left" className="p-0 w-72 flex flex-col h-full animate-in slide-in-from-left-2 duration-300">
                 {/* Header without close button */}
                 <div className="flex items-center justify-center p-4 border-b shrink-0 bg-gradient-to-r from-social-light-green to-social-blue">
+                  <img 
+                    src="/lovable-uploads/d215e62c-d97d-4600-a98e-68acbeba47d0.png" 
+                    alt="SocialChat" 
+                    className="h-8 w-auto mr-2"
+                  />
                   <h2 className="font-pixelated text-lg text-white">
                     Menu
                   </h2>
@@ -143,7 +146,7 @@ export function MobileHeader() {
                   <UserSearch />
                 </div>
                 
-                {/* Navigation section - this will expand to fill remaining space */}
+                {/* Navigation section */}
                 <div className="p-4 flex-1">
                   <h4 className="text-sm font-pixelated mb-3">Main Navigation</h4>
                   <div className="space-y-2">
@@ -165,7 +168,7 @@ export function MobileHeader() {
                   </div>
                 </div>
 
-                {/* Footer with logout - pinned to bottom */}
+                {/* Footer with logout */}
                 <div className="p-4 border-t mt-auto shrink-0">
                   <Button 
                     variant="ghost" 
@@ -182,9 +185,16 @@ export function MobileHeader() {
               </SheetContent>
             </Sheet>
             
-            <h1 className="font-pixelated text-base">
-              <span className="social-gradient bg-clip-text text-transparent">SocialChat</span>
-            </h1>
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <img 
+                src="/lovable-uploads/d215e62c-d97d-4600-a98e-68acbeba47d0.png" 
+                alt="SocialChat" 
+                className="h-8 w-auto"
+              />
+              <h1 className="font-pixelated text-base">
+                <span className="social-gradient bg-clip-text text-transparent">SocialChat</span>
+              </h1>
+            </Link>
           </div>
           
           <DropdownMenu>

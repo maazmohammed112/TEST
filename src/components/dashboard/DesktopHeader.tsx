@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -90,7 +89,6 @@ export function DesktopHeader() {
         title: 'Logged out',
         description: 'You have been successfully logged out.',
       });
-      // Navigate to login page after logout
       navigate('/login');
     } catch (error) {
       console.error('Error logging out:', error);
@@ -115,9 +113,16 @@ export function DesktopHeader() {
       <div className="container mx-auto px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="font-bold text-lg">
-              <span className="social-gradient bg-clip-text text-transparent">Social</span>
-            </h1>
+            <Link to="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <img 
+                src="/lovable-uploads/d215e62c-d97d-4600-a98e-68acbeba47d0.png" 
+                alt="SocialChat" 
+                className="h-8 w-auto"
+              />
+              <h1 className="font-bold text-lg">
+                <span className="social-gradient bg-clip-text text-transparent">Social</span>
+              </h1>
+            </Link>
             
             <nav className="hidden md:flex ml-6 gap-1">
               {links.map((link) => (
