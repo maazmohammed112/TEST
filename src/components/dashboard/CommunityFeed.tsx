@@ -177,7 +177,7 @@ export function CommunityFeed() {
   };
 
   const handleLikeChange = async (payload: any) => {
-    // Get post_id from payload.new for INSERT/UPDATE events, or payload.old for DELETE events
+    // Get post_id from payload based on event type
     const postId = payload.eventType === 'DELETE' ? payload.old.post_id : payload.new.post_id;
     
     if (!postId) return; // Skip if no postId is found
@@ -224,7 +224,8 @@ export function CommunityFeed() {
   };
 
   const handleCommentChange = async (payload: any) => {
-    const postId = payload.new.post_id;
+    const postId = payload.new?.post_id || payload.old?.post_id;
+    if (!postId) return;
     
     // Fetch updated post data
     const { data: updatedPost } = await supabase
