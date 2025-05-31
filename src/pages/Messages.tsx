@@ -485,9 +485,6 @@ export function Messages() {
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-[9px] text-muted-foreground mt-0.5 font-pixelated">
-                    Press Enter to send, Shift+Enter for new line
-                  </p>
                 </div>
               </>
             ) : (
