@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { 
@@ -182,9 +181,16 @@ export function MobileHeader() {
               </SheetContent>
             </Sheet>
             
-            <h1 className="font-pixelated text-base">
-              <span className="social-gradient bg-clip-text text-transparent">SocialChat</span>
-            </h1>
+            <div className="flex items-center gap-2">
+              <img 
+                src="/lovable-uploads/d215e62c-d97d-4600-a98e-68acbeba47d0.png" 
+                alt="SocialChat Logo" 
+                className="h-6 w-auto"
+              />
+              <h1 className="font-pixelated text-base">
+                <span className="social-gradient bg-clip-text text-transparent">SocialChat</span>
+              </h1>
+            </div>
           </div>
           
           <DropdownMenu>
