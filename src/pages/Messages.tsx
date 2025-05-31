@@ -283,9 +283,10 @@ export function Messages() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto relative h-[calc(100vh-60px)]">
+      <div className="max-w-2xl mx-auto h-[calc(100vh-60px)] flex flex-col">
+        {/* Friends List */}
         <div className={`w-full md:w-1/3 border-r flex flex-col h-full ${selectedFriend ? 'hidden md:flex' : ''}`}>
-          <div className="p-3 border-b bg-muted/30">
+          <div className="p-3 border-b bg-background sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <h3 className="font-pixelated text-sm font-semibold">Messages</h3>
@@ -347,10 +348,12 @@ export function Messages() {
           </ScrollArea>
         </div>
         
+        {/* Chat Area */}
         <div className={`flex-1 flex flex-col h-full ${!selectedFriend ? 'hidden md:flex' : ''}`}>
           {selectedFriend ? (
             <>
-              <div className="bg-background border-b flex items-center gap-3 p-3 sticky top-0 z-10">
+              {/* Chat Header - Fixed */}
+              <div className="bg-background border-b flex items-center gap-3 p-3 sticky top-0 z-20">
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -374,6 +377,7 @@ export function Messages() {
                 </div>
               </div>
               
+              {/* Messages Area - Scrollable */}
               <ScrollArea className="flex-1 p-4">
                 {messages.length > 0 ? (
                   <div className="space-y-4">
@@ -417,7 +421,8 @@ export function Messages() {
                 )}
               </ScrollArea>
 
-              <div className="bg-background border-t p-2 sticky bottom-0">
+              {/* Message Input - Fixed to Bottom */}
+              <div className="bg-background border-t p-2 sticky bottom-0 z-10">
                 <div className="flex gap-2">
                   <Textarea 
                     placeholder="Type a message..." 
