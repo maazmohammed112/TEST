@@ -7,7 +7,6 @@ import { Send, MessageSquare, User, ArrowLeft, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 
 interface Friend {
@@ -40,6 +39,7 @@ export function Messages() {
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const fetchFriends = async () => {
@@ -196,9 +196,10 @@ export function Messages() {
   };
 
   const scrollToBottom = () => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    if (messagesContainerRef.current) {
+      const { scrollHeight, clientHeight } = messagesContainerRef.current;
+      messagesContainerRef.current.scrollTop = scrollHeight - clientHeight;
+    }
   };
 
   useEffect(() => {
@@ -291,6 +292,33 @@ export function Messages() {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    let touchStartY = 0;
+    let scrollStartY = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+      scrollStartY = container.scrollTop;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touchY = e.touches[0].clientY;
+      const diff = touchStartY - touchY;
+      container.scrollTop = scrollStartY + diff;
+    };
+
+    container.addEventListener('touchstart', handleTouchStart);
+    container.addEventListener('touchmove', handleTouchMove);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, []);
+
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto h-[calc(100vh-60px)] bg-background rounded-lg shadow-lg overflow-hidden">
@@ -298,7 +326,7 @@ export function Messages() {
           {/* Sidebar - Friends List */}
           <div className={`w-full md:w-80 border-r flex flex-col ${selectedFriend ? 'hidden md:flex' : ''}`}>
             {/* Search Header */}
-            <div className="p-4 border-b bg-muted/30">
+            <div className="p-4 border-b bg-muted/30 sticky top-0 z-10">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -310,8 +338,8 @@ export function Messages() {
               </div>
             </div>
 
-            {/* Friends List */}
-            <ScrollArea className="flex-1">
+            {/* Friends List - Scrollable */}
+            <div className="flex-1 overflow-y-auto">
               {loading ? (
                 <div className="space-y-2 p-4">
                   {[1, 2, 3].map(i => (
@@ -372,7 +400,7 @@ export function Messages() {
                   )}
                 </div>
               )}
-            </ScrollArea>
+            </div>
           </div>
 
           {/* Chat Area */}
@@ -407,42 +435,47 @@ export function Messages() {
                 </div>
 
                 {/* Messages Area - Scrollable */}
-                <div className="flex-1 overflow-y-auto p-4" style={{ height: 'calc(100vh - 180px)' }}>
-                  <div className="space-y-4">
-                    {messages.map((message) => (
-                      <div 
-                        key={message.id}
-                        className={`flex ${message.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div className={`flex gap-2 max-w-[80%] ${message.sender_id === currentUser?.id ? 'flex-row-reverse' : ''}`}>
-                          <Avatar className="h-8 w-8 mt-1">
-                            {message.sender?.avatar ? (
-                              <AvatarImage src={message.sender.avatar} />
-                            ) : (
-                              <AvatarFallback className="bg-primary text-primary-foreground">
-                                {message.sender?.name.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div 
-                            className={`p-3 rounded-lg ${
-                              message.sender_id === currentUser?.id 
-                                ? 'bg-primary text-primary-foreground' 
-                                : 'bg-muted'
-                            }`}
-                          >
-                            <p className="text-sm whitespace-pre-wrap break-words">
-                              {message.content}
-                            </p>
-                            <p className="text-xs opacity-70 mt-1">
-                              {format(new Date(message.created_at), 'HH:mm')}
-                            </p>
-                          </div>
+                <div 
+                  ref={messagesContainerRef}
+                  className="flex-1 overflow-y-auto p-4 space-y-4"
+                  style={{ 
+                    height: 'calc(100vh - 180px)',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                >
+                  {messages.map((message) => (
+                    <div 
+                      key={message.id}
+                      className={`flex ${message.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`flex gap-2 max-w-[80%] ${message.sender_id === currentUser?.id ? 'flex-row-reverse' : ''}`}>
+                        <Avatar className="h-8 w-8 mt-1">
+                          {message.sender?.avatar ? (
+                            <AvatarImage src={message.sender.avatar} />
+                          ) : (
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              {message.sender?.name.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div 
+                          className={`p-3 rounded-lg ${
+                            message.sender_id === currentUser?.id 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-muted'
+                          }`}
+                        >
+                          <p className="text-sm whitespace-pre-wrap break-words">
+                            {message.content}
+                          </p>
+                          <p className="text-xs opacity-70 mt-1">
+                            {format(new Date(message.created_at), 'HH:mm')}
+                          </p>
                         </div>
                       </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Message Input - Fixed at Bottom */}
