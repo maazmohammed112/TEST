@@ -142,7 +142,7 @@ export function MobileHeader() {
                   <UserSearch />
                 </div>
                 
-                {/* Navigation section - this will expand to fill remaining space */}
+                {/* Navigation section */}
                 <div className="p-4 flex-1">
                   <h4 className="text-sm font-pixelated mb-3">Main Navigation</h4>
                   <div className="space-y-2">
@@ -152,7 +152,7 @@ export function MobileHeader() {
                         to={tab.path}
                         className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-pixelated transition-all duration-200 hover-scale ${
                           isActive(tab.path) 
-                            ? 'bg-social-dark-green text-white shadow-md'
+                            ? 'bg-social-green text-white shadow-md'
                             : 'hover:bg-muted/50'
                         }`}
                         onClick={() => setOpen(false)}
@@ -164,7 +164,7 @@ export function MobileHeader() {
                   </div>
                 </div>
 
-                {/* Footer with logout - pinned to bottom */}
+                {/* Footer with logout */}
                 <div className="p-4 border-t mt-auto shrink-0">
                   <Button 
                     variant="ghost" 
@@ -188,7 +188,7 @@ export function MobileHeader() {
                 className="h-6 w-auto"
               />
               <h1 className="font-pixelated text-base">
-                <span className="social-gradient bg-clip-text text-transparent">SocialChat</span>
+                <span className="text-social-green">SocialChat</span>
               </h1>
             </div>
           </div>
@@ -236,8 +236,8 @@ export function MobileHeader() {
               to={tab.path} 
               className={`flex flex-col items-center justify-center py-2 font-pixelated transition-all duration-200 hover-scale ${
                 isActive(tab.path) 
-                  ? 'text-white bg-social-dark-green shadow-md' 
-                  : 'text-muted-foreground hover:bg-muted/50'
+                  ? 'text-social-green' 
+                  : 'text-muted-foreground hover:text-social-green/70'
               }`}
             >
               {tab.icon}
