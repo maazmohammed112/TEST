@@ -4,11 +4,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, MessageSquare, User, ArrowLeft } from 'lucide-react';
+import { Send, MessageSquare, User, ArrowLeft, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Friend {
   id: string;
@@ -37,6 +39,7 @@ export function Messages() {
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -285,18 +288,66 @@ export function Messages() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto relative h-[calc(100vh-60px)]">
-        <div className="flex h-[calc(100vh-60px)]">
+        <div className="absolute top-0 left-0 right-0 z-20 bg-background border-b">
+          <div className="flex items-center justify-between p-3">
+            <div className="flex items-center gap-3">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              <h1 className="font-pixelated text-base">Messages</h1>
+            </div>
+            <Button
+              onClick={() => setShowInfo(true)}
+              size="icon"
+              className="h-7 w-7 rounded-full bg-social-blue hover:bg-social-blue/90 text-white hover-scale"
+            >
+              <Info className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <Dialog open={showInfo} onOpenChange={setShowInfo}>
+          <DialogContent className="max-w-sm mx-auto">
+            <DialogHeader>
+              <DialogTitle className="font-pixelated text-lg social-gradient bg-clip-text text-transparent">
+                Real-time Messaging
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <p className="font-pixelated text-sm text-muted-foreground leading-relaxed">
+                Chat with your friends in real-time. Messages are automatically updated without refreshing the page.
+              </p>
+              <p className="font-pixelated text-sm text-muted-foreground leading-relaxed">
+                Select a friend from your contacts to start a conversation. Your friends list updates every 30 seconds.
+              </p>
+              <Button 
+                onClick={() => setShowInfo(false)}
+                className="w-full bg-social-green hover:bg-social-light-green text-white font-pixelated text-sm"
+              >
+                Got it!
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <div className="flex h-[calc(100vh-60px)] pt-[56px]">
           <div className={`w-full md:w-1/3 border-r flex flex-col ${selectedFriend ? 'hidden md:flex' : ''}`}>
-            <div className="p-3 border-b bg-background sticky top-0 z-10">
+            <div className="p-3 border-b bg-muted/30">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                <h3 className="font-pixelated text-sm">Contacts ({friends.length})</h3>
+                <h3 className="font-pixelated text-sm font-semibold">Contacts ({friends.length})</h3>
               </div>
             </div>
             <ScrollArea className="flex-1">
               {loading ? (
-                <div className="p-6 text-center">
-                  <p className="text-muted-foreground">Loading...</p>
+                <div className="space-y-2 p-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="flex items-center gap-3 p-3 animate-pulse">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="flex-1">
+                        <Skeleton className="h-4 w-24 mb-1" />
+                        <Skeleton className="h-3 w-32" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : friends.length > 0 ? (
                 <div className="p-2 space-y-1">
@@ -313,12 +364,12 @@ export function Messages() {
                         fetchMessages(friend.id);
                       }}
                     >
-                      <Avatar className="h-8 w-8">
+                      <Avatar className="h-10 w-10">
                         {friend.avatar ? (
                           <AvatarImage src={friend.avatar} />
                         ) : (
-                          <AvatarFallback className="bg-primary text-white font-pixelated text-xs">
-                            {friend.name.substring(0, 2).toUpperCase()}
+                          <AvatarFallback className="bg-primary text-white font-pixelated text-sm">
+                            {friend.name ? friend.name.substring(0, 2).toUpperCase() : 'UN'}
                           </AvatarFallback>
                         )}
                       </Avatar>
@@ -330,8 +381,8 @@ export function Messages() {
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full p-6">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground mb-3" />
+                <div className="text-center p-6">
+                  <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-muted-foreground font-pixelated text-sm mb-3">No friends yet</p>
                   <Button variant="outline" className="font-pixelated text-sm" asChild>
                     <a href="/friends">Find Friends</a>
@@ -344,12 +395,12 @@ export function Messages() {
           <div className={`flex-1 flex flex-col ${!selectedFriend ? 'hidden md:flex' : ''}`}>
             {selectedFriend ? (
               <>
-                <div className="border-b flex items-center gap-3 bg-background p-3 sticky top-0 z-20">
+                <div className="border-b flex items-center gap-3 bg-background p-3 sticky top-0 z-10">
                   <Button 
                     variant="ghost" 
                     size="icon" 
                     onClick={() => setSelectedFriend(null)}
-                    className="md:hidden h-8 w-8"
+                    className="md:hidden h-8 w-8 hover:bg-muted/50 transition-colors"
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
@@ -368,44 +419,68 @@ export function Messages() {
                   </div>
                 </div>
                 
-                <ScrollArea className="flex-1 px-4 py-2">
-                  <div className="space-y-4">
-                    {messages.map((message) => (
-                      <div 
-                        key={message.id}
-                        className={`flex ${message.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div className={`message-bubble ${
-                          message.sender_id === currentUser?.id 
-                            ? 'message-bubble-sent' 
-                            : 'message-bubble-received'
-                        }`}>
-                          {message.content}
-                          <div className="text-[10px] opacity-70 mt-1 text-right">
-                            {format(new Date(message.created_at), 'HH:mm')}
+                <ScrollArea className="flex-1 p-4">
+                  {messages.length > 0 ? (
+                    <div className="space-y-4">
+                      {messages.map((message) => (
+                        <div 
+                          key={message.id}
+                          className={`flex ${message.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className={`flex gap-2 max-w-[80%] ${message.sender_id === currentUser?.id ? 'flex-row-reverse' : ''}`}>
+                            <Avatar className="h-6 w-6 mt-1">
+                              {message.sender?.avatar ? (
+                                <AvatarImage src={message.sender.avatar} />
+                              ) : (
+                                <AvatarFallback className="bg-primary text-white font-pixelated text-xs">
+                                  {message.sender?.name.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div>
+                              <p className={`text-xs font-pixelated mb-1 ${message.sender_id === currentUser?.id ? 'text-right' : ''}`}>
+                                {message.sender?.name}
+                              </p>
+                              <div className={`p-3 rounded-lg text-sm font-pixelated ${
+                                message.sender_id === currentUser?.id 
+                                  ? 'bg-primary text-white' 
+                                  : 'bg-muted'
+                              }`}>
+                                <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
+                                <p className="text-xs opacity-70 mt-2">
+                                  {format(new Date(message.created_at), 'HH:mm')}
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center">
+                        <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-muted-foreground font-pixelated text-sm">Start the conversation!</p>
                       </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
+                    </div>
+                  )}
                 </ScrollArea>
-                
-                <div className="border-t bg-background p-3 sticky bottom-0 z-20">
+
+                <div className="border-t bg-background p-3">
                   <div className="flex gap-2">
                     <Textarea 
-                      placeholder="Type a message..."
+                      placeholder="Type a message..." 
+                      className="flex-1 min-h-[40px] max-h-[120px] font-pixelated text-sm resize-none focus:ring-2 focus:ring-social-green/20 transition-all duration-200"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={handleKeyDown}
                       disabled={sendingMessage}
-                      className="min-h-[40px] max-h-[80px] font-pixelated text-sm resize-none"
-                      rows={1}
                     />
                     <Button 
+                      className="bg-social-green hover:bg-social-light-green text-white font-pixelated h-[40px] w-[40px] p-0 flex-shrink-0 hover:scale-105 transition-transform"
                       onClick={sendMessage}
                       disabled={!newMessage.trim() || sendingMessage}
-                      className="bg-social-green hover:bg-social-light-green text-white h-10 w-10 p-0"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
@@ -417,7 +492,7 @@ export function Messages() {
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                <MessageSquare className="h-16 w-16 text-muted-foreground mb-4" />
+                <MessageSquare className="h-16 w-16 text-primary mb-4" />
                 <h1 className="text-lg font-pixelated font-bold mb-2">Select a chat</h1>
                 <p className="text-muted-foreground font-pixelated text-sm">
                   Choose a friend to start messaging
@@ -432,3 +507,5 @@ export function Messages() {
 }
 
 export default Messages;
+
+export default Messages
