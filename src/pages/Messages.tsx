@@ -467,25 +467,25 @@ export function Messages() {
                   )}
                 </ScrollArea>
 
-                <div className="border-t bg-background p-4">
-                  <div className="flex gap-3">
+                <div className="border-t bg-background p-3">
+                  <div className="flex gap-2">
                     <Textarea 
                       placeholder="Type a message..." 
-                      className="flex-1 min-h-[48px] max-h-[120px] font-pixelated text-sm resize-none focus:ring-2 focus:ring-social-green/20 transition-all duration-200"
+                      className="flex-1 min-h-[40px] max-h-[120px] font-pixelated text-sm resize-none focus:ring-2 focus:ring-social-green/20 transition-all duration-200"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={handleKeyDown}
                       disabled={sendingMessage}
                     />
                     <Button 
-                      className="bg-social-green hover:bg-social-light-green text-white font-pixelated h-[48px] w-[48px] p-0 flex-shrink-0 hover:scale-105 transition-transform"
+                      className="bg-social-green hover:bg-social-light-green text-white font-pixelated h-[40px] w-[40px] p-0 flex-shrink-0 hover:scale-105 transition-transform"
                       onClick={sendMessage}
                       disabled={!newMessage.trim() || sendingMessage}
                     >
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2 font-pixelated">
+                  <p className="text-[10px] text-muted-foreground mt-1 font-pixelated">
                     Press Enter to send, Shift+Enter for new line
                   </p>
                 </div>
@@ -495,7 +495,7 @@ export function Messages() {
                 <MessageSquare className="h-16 w-16 text-primary mb-4" />
                 <h1 className="text-lg font-pixelated font-bold mb-2">Select a chat</h1>
                 <p className="text-muted-foreground font-pixelated text-sm">
-                  Choose a friend to start messaging with real-time updates
+                  Choose a friend to start messaging
                 </p>
               </div>
             )}
