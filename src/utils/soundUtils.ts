@@ -1,3 +1,4 @@
+```typescript
 import clickSound from '/sounds/click.mp3';
 
 let isSoundEnabled = true;
@@ -15,3 +16,4 @@ export const playClickSound = () => {
 export const toggleSound = (enabled: boolean) => {
   isSoundEnabled = enabled;
 };
+```
