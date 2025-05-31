@@ -353,7 +353,7 @@ export function Messages() {
           {selectedFriend ? (
             <>
               {/* Chat Header - Fixed */}
-              <div className="bg-background border-b flex items-center gap-3 p-3 sticky top-0 z-20">
+              <div className="bg-background border-b flex items-center gap-3 p-3 fixed top-0 left-0 right-0 md:relative z-20">
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -378,51 +378,53 @@ export function Messages() {
               </div>
               
               {/* Messages Area - Scrollable */}
-              <ScrollArea className="flex-1 p-4">
-                {messages.length > 0 ? (
-                  <div className="space-y-4">
-                    {messages.map((message) => (
-                      <div 
-                        key={message.id}
-                        className={`flex ${message.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div className={`flex gap-2 max-w-[80%] ${message.sender_id === currentUser?.id ? 'flex-row-reverse' : ''}`}>
-                          <Avatar className="h-6 w-6">
-                            {message.sender?.avatar ? (
-                              <AvatarImage src={message.sender.avatar} />
-                            ) : (
-                              <AvatarFallback className="bg-primary text-white font-pixelated text-xs">
-                                {message.sender?.name.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div className={`p-3 rounded-lg text-sm font-pixelated ${
-                            message.sender_id === currentUser?.id 
-                              ? 'bg-primary text-white' 
-                              : 'bg-muted'
-                          }`}>
-                            <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
-                            <p className="text-xs opacity-70 mt-1">
-                              {format(new Date(message.created_at), 'HH:mm')}
-                            </p>
+              <div className="flex-1 overflow-y-auto pt-[60px] pb-[60px] md:pt-0 md:pb-0">
+                <div className="p-4 space-y-4">
+                  {messages.length > 0 ? (
+                    <>
+                      {messages.map((message) => (
+                        <div 
+                          key={message.id}
+                          className={`flex ${message.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className={`flex gap-2 max-w-[80%] ${message.sender_id === currentUser?.id ? 'flex-row-reverse' : ''}`}>
+                            <Avatar className="h-6 w-6">
+                              {message.sender?.avatar ? (
+                                <AvatarImage src={message.sender.avatar} />
+                              ) : (
+                                <AvatarFallback className="bg-primary text-white font-pixelated text-xs">
+                                  {message.sender?.name.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div className={`p-3 rounded-lg text-sm font-pixelated ${
+                              message.sender_id === currentUser?.id 
+                                ? 'bg-primary text-white' 
+                                : 'bg-muted'
+                            }`}>
+                              <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
+                              <p className="text-xs opacity-70 mt-1">
+                                {format(new Date(message.created_at), 'HH:mm')}
+                              </p>
+                            </div>
                           </div>
                         </div>
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </>
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center">
+                        <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-muted-foreground font-pixelated text-sm">Start the conversation!</p>
                       </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <div className="text-center">
-                      <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground font-pixelated text-sm">Start the conversation!</p>
                     </div>
-                  </div>
-                )}
-              </ScrollArea>
+                  )}
+                </div>
+              </div>
 
               {/* Message Input - Fixed to Bottom */}
-              <div className="bg-background border-t p-2 sticky bottom-0 z-10">
+              <div className="bg-background border-t p-2 fixed bottom-0 left-0 right-0 md:relative">
                 <div className="flex gap-2">
                   <Textarea 
                     placeholder="Type a message..." 
