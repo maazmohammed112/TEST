@@ -173,6 +173,11 @@ export function RegisterForm() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
+        <div className="bg-yellow-100 text-yellow-800 p-2 rounded-md mb-4">
+          <p className="font-pixelated text-xs">
+            🚧 This project is under development. Some features may be limited or unavailable.
+          </p>
+        </div>
         <CardTitle className="text-2xl font-pixelated social-gradient bg-clip-text text-transparent">
           Create Account
         </CardTitle>
