@@ -4,12 +4,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Camera, Edit, Save, X, Heart, Trash2 } from 'lucide-react';
+import { Camera, Edit, Save, X, Heart, Trash2, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DeleteAccountDialog } from '@/components/user/DeleteAccountDialog';
 import { useNavigate } from 'react-router-dom';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface UserProfileData {
   id: string;
@@ -329,6 +330,17 @@ export default function UserProfile() {
               </div>
             </div>
           )}
+
+          {/* Add Theme Toggle */}
+          <div className="mt-4 flex justify-center">
+            <div className="bg-background/50 p-2 rounded-lg border shadow-sm">
+              <div className="flex items-center gap-2">
+                <Palette className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Theme</span>
+              </div>
+              <ThemeToggle />
+            </div>
+          </div>
         </CardHeader>
       </Card>
 
