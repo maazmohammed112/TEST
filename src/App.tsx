@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { useNotifications } from "@/hooks/use-notifications";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 // Pages
 import Index from "./pages/Index";
@@ -31,7 +31,6 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const { setupAllNotifications } = useNotifications();
   
-  // Set favicon and handle notifications
   useEffect(() => {
     const faviconLink = document.querySelector("link[rel*='icon']") || document.createElement('link');
     faviconLink.setAttribute('rel', 'shortcut icon');
@@ -40,7 +39,6 @@ const App = () => {
     
     document.title = "SocialChat - Connect with Friends";
     
-    // Set up notifications when session changes and user is authenticated
     let cleanupNotifications: (() => void) | undefined;
     
     if (session) {
@@ -55,16 +53,13 @@ const App = () => {
   }, [session, setupAllNotifications]);
   
   useEffect(() => {
-    // Set up the auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
-        // Handle auth events
         if (event === 'SIGNED_OUT') {
           setSession(null);
           setLoading(false);
-          // Clear any cached data
           localStorage.clear();
           sessionStorage.clear();
         } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -80,14 +75,13 @@ const App = () => {
       }
     );
 
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session check:', session?.user?.id);
       setSession(session);
-      setLoading(false);
+      // Add a small delay to show the loading animation
+      setTimeout(() => setLoading(false), 1500);
     });
 
-    // Setup push notifications
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       try {
         Notification.requestPermission().then(permission => {
@@ -104,18 +98,7 @@ const App = () => {
   }, []);
   
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-social-light-green to-social-blue">
-        <div className="text-center">
-          <img 
-            src="/lovable-uploads/d215e62c-d97d-4600-a98e-68acbeba47d0.png" 
-            alt="SocialChat Logo" 
-            className="h-20 w-auto mx-auto animate-pulse mb-4" 
-          />
-          <p className="font-pixelated text-white text-sm">Loading SocialChat...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
@@ -125,7 +108,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Public Routes - redirect to dashboard if authenticated */}
+            {/* Public Routes */}
             <Route 
               path="/" 
               element={session ? <Navigate to="/dashboard" replace /> : <Index />} 
@@ -139,7 +122,7 @@ const App = () => {
               element={session ? <Navigate to="/dashboard" replace /> : <Register />} 
             />
             
-            {/* Protected Routes - redirect to login if not authenticated */}
+            {/* Protected Routes */}
             <Route 
               path="/dashboard" 
               element={
@@ -189,7 +172,7 @@ const App = () => {
               } 
             />
             
-            {/* Catch-all route for 404 - improved */}
+            {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
