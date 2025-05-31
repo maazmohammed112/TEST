@@ -4,19 +4,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, MessageSquare, User, ArrowLeft, Info } from 'lucide-react';
+import { Send, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Friend {
   id: string;
   name: string;
   username: string;
   avatar: string;
+  lastMessage?: {
+    content: string;
+    created_at: string;
+    unread: boolean;
+  };
 }
 
 interface Message {
@@ -39,7 +42,6 @@ export function Messages() {
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
-  const [showInfo, setShowInfo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -63,41 +65,54 @@ export function Messages() {
         });
       }
 
-      const { data: friendsData, error } = await supabase
+      // Get friends with last message and unread count
+      const { data: friendsData } = await supabase
         .from('friends')
-        .select('id, sender_id, receiver_id, status')
+        .select(`
+          id, 
+          sender_id, 
+          receiver_id,
+          profiles!friends_sender_id_fkey(id, name, username, avatar),
+          messages!messages_sender_id_fkey(
+            content,
+            created_at,
+            read
+          )
+        `)
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .eq('status', 'accepted');
-        
-      if (error) throw error;
-      
-      const formattedFriends: Friend[] = [];
-      
-      if (friendsData) {
-        for (const friend of friendsData) {
-          const isSender = friend.sender_id === user.id;
-          const friendId = isSender ? friend.receiver_id : friend.sender_id;
-          
-          const { data: friendProfile } = await supabase
-            .from('profiles')
-            .select('id, name, username, avatar')
-            .eq('id', friendId)
-            .single();
-          
-          if (friendProfile && friendProfile.id) {
-            formattedFriends.push({
-              id: friendProfile.id,
-              name: friendProfile.name || 'User',
-              username: friendProfile.username || 'guest',
-              avatar: friendProfile.avatar || ''
-            });
-          }
-        }
-      }
+        .eq('status', 'accepted')
+        .order('created_at', { foreignTable: 'messages', ascending: false });
 
-      setFriends(formattedFriends);
+      if (friendsData) {
+        const formattedFriends = friendsData.map(friend => {
+          const isSender = friend.sender_id === user.id;
+          const friendProfile = isSender ? friend.profiles : friend.profiles;
+          const lastMessage = friend.messages?.[0];
+          
+          return {
+            id: friendProfile.id,
+            name: friendProfile.name || 'User',
+            username: friendProfile.username || 'guest',
+            avatar: friendProfile.avatar || '',
+            lastMessage: lastMessage ? {
+              content: lastMessage.content,
+              created_at: lastMessage.created_at,
+              unread: !lastMessage.read && lastMessage.sender_id !== user.id
+            } : undefined
+          };
+        });
+
+        // Sort friends by last message date
+        formattedFriends.sort((a, b) => {
+          if (!a.lastMessage) return 1;
+          if (!b.lastMessage) return -1;
+          return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime();
+        });
+
+        setFriends(formattedFriends);
+      }
     } catch (error) {
-      console.error('Error fetching friends for messages:', error);
+      console.error('Error fetching friends:', error);
     } finally {
       setLoading(false);
     }
@@ -124,7 +139,7 @@ export function Messages() {
         
       if (error) throw error;
 
-      const formattedMessages: Message[] = messagesData.map((message: any) => ({
+      const formattedMessages = messagesData.map(message => ({
         id: message.id,
         sender_id: message.sender_id,
         receiver_id: message.receiver_id,
@@ -138,6 +153,16 @@ export function Messages() {
 
       setMessages(formattedMessages);
       scrollToBottom();
+
+      // Mark messages as read
+      if (formattedMessages.length > 0) {
+        await supabase
+          .from('messages')
+          .update({ read: true })
+          .eq('sender_id', friendId)
+          .eq('receiver_id', user.id)
+          .eq('read', false);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
@@ -211,75 +236,29 @@ export function Messages() {
   useEffect(() => {
     fetchFriends();
     
-    const friendsInterval = setInterval(() => {
-      fetchFriends();
-    }, 30000);
+    const channel = supabase
+      .channel('messages')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'messages' }, 
+        () => {
+          fetchFriends();
+          if (selectedFriend) {
+            fetchMessages(selectedFriend.id);
+          }
+        }
+      )
+      .subscribe();
 
-    return () => clearInterval(friendsInterval);
-  }, []);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedFriend]);
 
   useEffect(() => {
-    if (selectedFriend && currentUser) {
+    if (selectedFriend) {
       fetchMessages(selectedFriend.id);
-      
-      const channel = supabase
-        .channel(`messages-${selectedFriend.id}-${currentUser.id}`)
-        .on('postgres_changes', 
-          { 
-            event: '*', 
-            schema: 'public', 
-            table: 'messages',
-            filter: `or(and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedFriend.id}),and(sender_id.eq.${selectedFriend.id},receiver_id.eq.${currentUser.id}))`
-          }, 
-          async (payload) => {
-            console.log('Real-time message update:', payload);
-            
-            if (payload.eventType === 'INSERT') {
-              const newMessage = payload.new as Message;
-              
-              if (newMessage.sender_id !== currentUser.id) {
-                const { data } = await supabase
-                  .from('profiles')
-                  .select('name, avatar')
-                  .eq('id', newMessage.sender_id)
-                  .single();
-                  
-                if (data) {
-                  setMessages(prevMessages => {
-                    const exists = prevMessages.some(msg => msg.id === newMessage.id);
-                    if (exists) return prevMessages;
-                    
-                    const messageWithSender = {
-                      ...newMessage,
-                      sender: {
-                        name: data.name || 'Unknown',
-                        avatar: data.avatar || ''
-                      }
-                    };
-                    
-                    const updated = [...prevMessages, messageWithSender];
-                    setTimeout(scrollToBottom, 100);
-                    return updated;
-                  });
-                }
-              }
-            } else if (payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
-              fetchMessages(selectedFriend.id);
-            }
-          }
-        )
-        .subscribe();
-
-      const messageInterval = setInterval(() => {
-        fetchMessages(selectedFriend.id);
-      }, 10000);
-
-      return () => {
-        supabase.removeChannel(channel);
-        clearInterval(messageInterval);
-      };
     }
-  }, [selectedFriend, currentUser]);
+  }, [selectedFriend]);
 
   useEffect(() => {
     scrollToBottom();
@@ -288,63 +267,22 @@ export function Messages() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto relative h-[calc(100vh-60px)]">
-        <div className="absolute top-0 left-0 right-0 z-20 bg-background border-b">
-          <div className="flex items-center justify-between p-3">
-            <div className="flex items-center gap-3">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              <h1 className="font-pixelated text-base">Messages</h1>
-            </div>
-            <Button
-              onClick={() => setShowInfo(true)}
-              size="icon"
-              className="h-7 w-7 rounded-full bg-social-blue hover:bg-social-blue/90 text-white hover-scale"
-            >
-              <Info className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        <Dialog open={showInfo} onOpenChange={setShowInfo}>
-          <DialogContent className="max-w-sm mx-auto">
-            <DialogHeader>
-              <DialogTitle className="font-pixelated text-lg social-gradient bg-clip-text text-transparent">
-                Real-time Messaging
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <p className="font-pixelated text-sm text-muted-foreground leading-relaxed">
-                Chat with your friends in real-time. Messages are automatically updated without refreshing the page.
-              </p>
-              <p className="font-pixelated text-sm text-muted-foreground leading-relaxed">
-                Select a friend from your contacts to start a conversation. Your friends list updates every 30 seconds.
-              </p>
-              <Button 
-                onClick={() => setShowInfo(false)}
-                className="w-full bg-social-green hover:bg-social-light-green text-white font-pixelated text-sm"
-              >
-                Got it!
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <div className="flex h-[calc(100vh-60px)] pt-[56px]">
+        <div className="flex h-[calc(100vh-60px)]">
+          {/* Friends List */}
           <div className={`w-full md:w-1/3 border-r flex flex-col ${selectedFriend ? 'hidden md:flex' : ''}`}>
-            <div className="p-3 border-b bg-muted/30">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <h3 className="font-pixelated text-sm font-semibold">Contacts ({friends.length})</h3>
-              </div>
+            <div className="p-3 border-b bg-background sticky top-0 z-10">
+              <h2 className="font-pixelated text-sm">Messages</h2>
             </div>
+            
             <ScrollArea className="flex-1">
               {loading ? (
                 <div className="space-y-2 p-3">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="flex items-center gap-3 p-3 animate-pulse">
-                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="h-10 w-10 rounded-full bg-muted" />
                       <div className="flex-1">
-                        <Skeleton className="h-4 w-24 mb-1" />
-                        <Skeleton className="h-3 w-32" />
+                        <div className="h-4 w-24 bg-muted rounded mb-1" />
+                        <div className="h-3 w-32 bg-muted rounded" />
                       </div>
                     </div>
                   ))}
@@ -354,36 +292,39 @@ export function Messages() {
                   {friends.map(friend => (
                     <div
                       key={friend.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors relative ${
                         selectedFriend?.id === friend.id 
                           ? 'bg-primary text-white' 
                           : 'hover:bg-muted/50'
                       }`}
-                      onClick={() => {
-                        setSelectedFriend(friend);
-                        fetchMessages(friend.id);
-                      }}
+                      onClick={() => setSelectedFriend(friend)}
                     >
                       <Avatar className="h-10 w-10">
                         {friend.avatar ? (
                           <AvatarImage src={friend.avatar} />
                         ) : (
                           <AvatarFallback className="bg-primary text-white font-pixelated text-sm">
-                            {friend.name ? friend.name.substring(0, 2).toUpperCase() : 'UN'}
+                            {friend.name.substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         )}
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="font-pixelated text-sm font-medium truncate">{friend.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">@{friend.username}</p>
+                        {friend.lastMessage && (
+                          <p className={`text-xs truncate ${friend.lastMessage.unread ? 'font-medium' : 'text-muted-foreground'}`}>
+                            {friend.lastMessage.content}
+                          </p>
+                        )}
                       </div>
+                      {friend.lastMessage?.unread && (
+                        <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-social-green animate-pulse" />
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center p-6">
-                  <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground font-pixelated text-sm mb-3">No friends yet</p>
+                  <p className="text-muted-foreground font-pixelated text-sm mb-3">No messages yet</p>
                   <Button variant="outline" className="font-pixelated text-sm" asChild>
                     <a href="/friends">Find Friends</a>
                   </Button>
@@ -392,15 +333,17 @@ export function Messages() {
             </ScrollArea>
           </div>
           
+          {/* Chat Area */}
           <div className={`flex-1 flex flex-col ${!selectedFriend ? 'hidden md:flex' : ''}`}>
             {selectedFriend ? (
               <>
+                {/* Chat Header */}
                 <div className="border-b flex items-center gap-3 bg-background p-3 sticky top-0 z-10">
                   <Button 
                     variant="ghost" 
                     size="icon" 
                     onClick={() => setSelectedFriend(null)}
-                    className="md:hidden h-8 w-8 hover:bg-muted/50 transition-colors"
+                    className="md:hidden h-8 w-8"
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
@@ -419,6 +362,7 @@ export function Messages() {
                   </div>
                 </div>
                 
+                {/* Messages */}
                 <ScrollArea className="flex-1 p-4">
                   {messages.length > 0 ? (
                     <div className="space-y-4">
@@ -438,16 +382,13 @@ export function Messages() {
                               )}
                             </Avatar>
                             <div>
-                              <p className={`text-xs font-pixelated mb-1 ${message.sender_id === currentUser?.id ? 'text-right' : ''}`}>
-                                {message.sender?.name}
-                              </p>
                               <div className={`p-3 rounded-lg text-sm font-pixelated ${
                                 message.sender_id === currentUser?.id 
-                                  ? 'bg-primary text-white' 
+                                  ? 'bg-social-green text-white' 
                                   : 'bg-muted'
                               }`}>
                                 <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
-                                <p className="text-xs opacity-70 mt-2">
+                                <p className="text-xs opacity-70 mt-1">
                                   {format(new Date(message.created_at), 'HH:mm')}
                                 </p>
                               </div>
@@ -460,13 +401,13 @@ export function Messages() {
                   ) : (
                     <div className="h-full flex items-center justify-center">
                       <div className="text-center">
-                        <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                         <p className="text-muted-foreground font-pixelated text-sm">Start the conversation!</p>
                       </div>
                     </div>
                   )}
                 </ScrollArea>
-
+                
+                {/* Message Input */}
                 <div className="border-t bg-background p-3">
                   <div className="flex gap-2">
                     <Textarea 
@@ -492,7 +433,6 @@ export function Messages() {
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                <MessageSquare className="h-16 w-16 text-primary mb-4" />
                 <h1 className="text-lg font-pixelated font-bold mb-2">Select a chat</h1>
                 <p className="text-muted-foreground font-pixelated text-sm">
                   Choose a friend to start messaging
