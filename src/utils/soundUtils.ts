@@ -1,34 +1,15 @@
-// Click sound utility
-let isSoundEnabled = true;
-let clickSound: HTMLAudioElement | null = null;
+import clickSound from '/sounds/click.mp3';
 
-// Initialize sound
-const initializeSound = () => {
-  if (!clickSound) {
-    clickSound = new Audio('/sounds/click.mp3');
-    clickSound.volume = 0.2;
-  }
-};
+let isSoundEnabled = true;
 
 export const playClickSound = () => {
   if (!isSoundEnabled) return;
   
-  try {
-    if (!clickSound) {
-      initializeSound();
-    }
-    
-    // Clone the audio to allow multiple rapid clicks
-    const soundClone = clickSound?.cloneNode() as HTMLAudioElement;
-    if (soundClone) {
-      soundClone.volume = 0.2;
-      soundClone.play().catch(() => {
-        // Ignore errors - some browsers block autoplay
-      });
-    }
-  } catch (error) {
-    console.error('Error playing sound:', error);
-  }
+  const audio = new Audio(clickSound);
+  audio.volume = 0.3;
+  audio.play().catch(() => {
+    // Ignore errors - some browsers block autoplay
+  });
 };
 
 export const toggleSound = (enabled: boolean) => {
