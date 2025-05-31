@@ -409,7 +409,7 @@ export function Messages() {
                       <AvatarImage src={selectedFriend.avatar} />
                     ) : (
                       <AvatarFallback className="bg-primary text-white font-pixelated text-xs">
-                        {selectedFriend.name ? selectedFriend.name.substring(0, 2).toUpperCase() : 'UN'}
+                        {selectedFriend.name.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     )}
                   </Avatar>
@@ -433,7 +433,7 @@ export function Messages() {
                                 <AvatarImage src={message.sender.avatar} />
                               ) : (
                                 <AvatarFallback className="bg-primary text-white font-pixelated text-xs">
-                                  {message.sender?.name ? message.sender.name.substring(0, 2).toUpperCase() : 'UN'}
+                                  {message.sender?.name.substring(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               )}
                             </Avatar>
@@ -466,7 +466,7 @@ export function Messages() {
                     </div>
                   )}
                 </ScrollArea>
-                
+
                 <div className="border-t bg-background p-4">
                   <div className="flex gap-3">
                     <Textarea 
@@ -507,5 +507,3 @@ export function Messages() {
 }
 
 export default Messages;
-
-export default Messages
