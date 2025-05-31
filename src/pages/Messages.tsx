@@ -379,8 +379,8 @@ export function Messages() {
           <div className={`flex-1 flex flex-col h-full ${!selectedFriend ? 'hidden md:flex' : ''}`}>
             {selectedFriend ? (
               <>
-                {/* Chat Header */}
-                <div className="flex items-center gap-3 p-4 border-b bg-muted/30">
+                {/* Chat Header - Fixed */}
+                <div className="flex items-center gap-3 p-4 border-b bg-muted/30 sticky top-0 z-10">
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -406,8 +406,8 @@ export function Messages() {
                   </div>
                 </div>
 
-                {/* Messages Area */}
-                <ScrollArea className="flex-1 p-4">
+                {/* Messages Area - Scrollable */}
+                <div className="flex-1 overflow-y-auto p-4" style={{ height: 'calc(100vh - 180px)' }}>
                   <div className="space-y-4">
                     {messages.map((message) => (
                       <div 
@@ -443,10 +443,10 @@ export function Messages() {
                     ))}
                     <div ref={messagesEndRef} />
                   </div>
-                </ScrollArea>
+                </div>
 
-                {/* Message Input */}
-                <div className="p-4 border-t bg-background">
+                {/* Message Input - Fixed at Bottom */}
+                <div className="p-4 border-t bg-background sticky bottom-0 left-0 right-0">
                   <div className="flex gap-2">
                     <Textarea 
                       placeholder="Type a message..." 
