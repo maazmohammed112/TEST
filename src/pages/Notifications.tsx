@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserPlus, MessageSquare, Heart, Bell, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -276,42 +276,35 @@ export function Notifications() {
     <DashboardLayout>
       <div className="max-w-2xl mx-auto h-[calc(100vh-60px)]">
         {/* Fixed Header */}
-        <Card className="sticky top-0 z-10 border-b shadow-sm">
-          <CardHeader className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
-                <CardTitle className="text-xl font-bold">Notifications</CardTitle>
-              </div>
-              {notifications.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowClearConfirm(true)}
-                  className="font-pixelated text-xs h-8"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Clear All
-                </Button>
-              )}
-            </div>
-            <CardDescription>
-              Stay updated with activity related to your account
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <div className="sticky top-0 z-10 bg-background border-b p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-social-green" />
+            <h1 className="font-pixelated text-sm">Notifications</h1>
+          </div>
+          {notifications.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowClearConfirm(true)}
+              className="font-pixelated text-xs h-7"
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Clear
+            </Button>
+          )}
+        </div>
 
         {/* Scrollable Content */}
-        <ScrollArea className="h-[calc(100vh-180px)] px-4">
-          <div className="space-y-4 py-4">
+        <ScrollArea className="h-[calc(100vh-120px)]">
+          <div className="p-2 space-y-2">
             {loading ? (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex items-start p-3 rounded-lg border animate-pulse">
-                    <div className="h-10 w-10 rounded-full bg-muted mr-3"></div>
+                    <div className="h-8 w-8 rounded-full bg-muted mr-2"></div>
                     <div className="flex-1">
-                      <div className="h-5 bg-muted rounded w-3/4 mb-2"></div>
-                      <div className="h-4 bg-muted rounded w-1/2"></div>
+                      <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-muted rounded w-1/2"></div>
                     </div>
                   </div>
                 ))}
@@ -320,35 +313,35 @@ export function Notifications() {
               notifications.map(notification => (
                 <div 
                   key={notification.id} 
-                  className={`flex items-start p-4 rounded-lg border animate-fade-in ${
+                  className={`flex items-start p-3 rounded-lg border animate-fade-in ${
                     !notification.read ? 'bg-accent/5' : ''
                   } hover:bg-accent/10 transition-colors`}
                 >
-                  <Avatar className="mr-3 mt-1">
+                  <Avatar className="h-8 w-8 mr-2">
                     {notification.sender.avatar ? (
                       <AvatarImage src={notification.sender.avatar} alt={notification.sender.name} />
                     ) : (
-                      <AvatarFallback className="bg-social-dark-green text-white">
+                      <AvatarFallback className="bg-social-dark-green text-white font-pixelated text-xs">
                         {notification.sender.name.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                      <p className="font-medium">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-pixelated text-xs truncate">
                         <span className="font-medium">{notification.sender.name}</span>
                         {' '}{notification.content}
                       </p>
-                      <span className="text-xs text-muted-foreground mt-1 sm:mt-0" title={format(new Date(notification.created_at), 'PPpp')}>
+                      <span className="font-pixelated text-[10px] text-muted-foreground whitespace-nowrap">
                         {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">@{notification.sender.username}</p>
+                    <p className="font-pixelated text-[10px] text-muted-foreground">@{notification.sender.username}</p>
                     {notification.type === 'friend_request' && (
-                      <div className="flex gap-2 mt-3">
+                      <div className="flex gap-2 mt-2">
                         <Button 
                           size="sm" 
-                          className="bg-social-dark-green hover:bg-social-forest-green text-white" 
+                          className="h-7 px-2 bg-social-green hover:bg-social-light-green text-white font-pixelated text-xs" 
                           onClick={() => handleAcceptFriend(notification.reference_id!)}
                         >
                           Accept
@@ -356,6 +349,7 @@ export function Notifications() {
                         <Button 
                           size="sm" 
                           variant="outline" 
+                          className="h-7 px-2 font-pixelated text-xs"
                           onClick={() => handleDeclineFriend(notification.reference_id!)}
                         >
                           Decline
@@ -364,21 +358,20 @@ export function Notifications() {
                     )}
                   </div>
                   {notification.type === 'friend_request' && (
-                    <UserPlus className="h-4 w-4 text-social-dark-green ml-2 mt-1 flex-shrink-0" />
+                    <UserPlus className="h-3 w-3 text-social-green ml-2 flex-shrink-0" />
                   )}
                   {notification.type === 'like' && (
-                    <Heart className="h-4 w-4 text-social-magenta ml-2 mt-1 flex-shrink-0" />
+                    <Heart className="h-3 w-3 text-social-magenta ml-2 flex-shrink-0" />
                   )}
                   {notification.type === 'comment' && (
-                    <MessageSquare className="h-4 w-4 text-social-green ml-2 mt-1 flex-shrink-0" />
+                    <MessageSquare className="h-3 w-3 text-social-green ml-2 flex-shrink-0" />
                   )}
                 </div>
               ))
             ) : (
-              <div className="py-10 text-center rounded-lg border border-dashed">
-                <Bell className="w-12 h-12 text-muted-foreground opacity-40 mx-auto mb-4" />
-                <p className="text-muted-foreground">You don't have any notifications yet.</p>
-                <p className="text-sm mt-2">Activity related to your account will appear here.</p>
+              <div className="py-8 text-center rounded-lg border border-dashed">
+                <Bell className="w-10 h-10 text-muted-foreground opacity-40 mx-auto mb-3" />
+                <p className="font-pixelated text-xs text-muted-foreground">No notifications yet</p>
               </div>
             )}
           </div>
@@ -388,16 +381,16 @@ export function Notifications() {
         <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle className="font-pixelated">Clear All Notifications</AlertDialogTitle>
-              <AlertDialogDescription className="font-pixelated">
+              <AlertDialogTitle className="font-pixelated text-sm">Clear All Notifications</AlertDialogTitle>
+              <AlertDialogDescription className="font-pixelated text-xs">
                 Are you sure you want to clear all notifications? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="font-pixelated">Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="font-pixelated text-xs">Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleClearNotifications}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 font-pixelated"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 font-pixelated text-xs"
               >
                 Clear All
               </AlertDialogAction>
