@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+
+import React from 'react';
 import { MobileHeader } from './MobileHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,15 +10,10 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const SWIPE_THRESHOLD = 50; // Minimum swipe distance to trigger navigation
-const ROUTES = ['/dashboard', '/friends', '/messages', '/notifications', '/profile'];
-
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const isMobile = useIsMobile();
   const location = useLocation();
   const navigate = useNavigate();
-  const touchStartX = useRef<number>(0);
-  const touchEndX = useRef<number>(0);
   const currentPath = location.pathname;
 
   const getRouteFromPath = (path: string) => {
@@ -27,46 +23,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   const currentRoute = getRouteFromPath(currentPath);
-
-  // Handle touch events for swipe navigation
-  useEffect(() => {
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartX.current = e.touches[0].clientX;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      touchEndX.current = e.touches[0].clientX;
-    };
-
-    const handleTouchEnd = () => {
-      const swipeDistance = touchEndX.current - touchStartX.current;
-      const currentIndex = ROUTES.indexOf(currentPath);
-
-      // Only handle horizontal swipes that exceed the threshold
-      if (Math.abs(swipeDistance) > SWIPE_THRESHOLD && currentIndex !== -1) {
-        if (swipeDistance > 0 && currentIndex > 0) {
-          // Swipe right - go to previous route
-          navigate(ROUTES[currentIndex - 1]);
-        } else if (swipeDistance < 0 && currentIndex < ROUTES.length - 1) {
-          // Swipe left - go to next route
-          navigate(ROUTES[currentIndex + 1]);
-        }
-      }
-    };
-
-    // Only add touch event listeners on mobile
-    if (isMobile) {
-      document.addEventListener('touchstart', handleTouchStart);
-      document.addEventListener('touchmove', handleTouchMove);
-      document.addEventListener('touchend', handleTouchEnd);
-
-      return () => {
-        document.removeEventListener('touchstart', handleTouchStart);
-        document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('touchend', handleTouchEnd);
-      };
-    }
-  }, [isMobile, currentPath, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col w-full">
@@ -119,12 +75,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </Tabs>
             </div>
           )}
-          <main 
-            className={`w-full ${isMobile ? 'pt-16 pb-16' : 'p-2'} overflow-x-hidden`}
-            style={{ 
-              touchAction: 'pan-y pinch-zoom', // Allow vertical scrolling but handle horizontal swipes
-            }}
-          >
+          <main className={`w-full ${isMobile ? 'pt-16 pb-16' : 'p-2'} overflow-x-hidden`}>
             <div className="w-full max-w-full overflow-hidden h-full">
               {children}
             </div>

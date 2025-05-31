@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { 
@@ -142,7 +143,7 @@ export function MobileHeader() {
                   <UserSearch />
                 </div>
                 
-                {/* Navigation section */}
+                {/* Navigation section - this will expand to fill remaining space */}
                 <div className="p-4 flex-1">
                   <h4 className="text-sm font-pixelated mb-3">Main Navigation</h4>
                   <div className="space-y-2">
@@ -152,7 +153,7 @@ export function MobileHeader() {
                         to={tab.path}
                         className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-pixelated transition-all duration-200 hover-scale ${
                           isActive(tab.path) 
-                            ? 'bg-social-green text-white shadow-md'
+                            ? 'bg-social-dark-green text-white shadow-md'
                             : 'hover:bg-muted/50'
                         }`}
                         onClick={() => setOpen(false)}
@@ -164,7 +165,7 @@ export function MobileHeader() {
                   </div>
                 </div>
 
-                {/* Footer with logout */}
+                {/* Footer with logout - pinned to bottom */}
                 <div className="p-4 border-t mt-auto shrink-0">
                   <Button 
                     variant="ghost" 
@@ -181,16 +182,9 @@ export function MobileHeader() {
               </SheetContent>
             </Sheet>
             
-            <div className="flex items-center gap-2">
-              <img 
-                src="/lovable-uploads/d215e62c-d97d-4600-a98e-68acbeba47d0.png" 
-                alt="SocialChat Logo" 
-                className="h-6 w-auto"
-              />
-              <h1 className="font-pixelated text-base">
-                <span className="text-social-green">SocialChat</span>
-              </h1>
-            </div>
+            <h1 className="font-pixelated text-base">
+              <span className="social-gradient bg-clip-text text-transparent">SocialChat</span>
+            </h1>
           </div>
           
           <DropdownMenu>
@@ -236,8 +230,8 @@ export function MobileHeader() {
               to={tab.path} 
               className={`flex flex-col items-center justify-center py-2 font-pixelated transition-all duration-200 hover-scale ${
                 isActive(tab.path) 
-                  ? 'text-social-green' 
-                  : 'text-muted-foreground hover:text-social-green/70'
+                  ? 'text-white bg-social-dark-green shadow-md' 
+                  : 'text-muted-foreground hover:bg-muted/50'
               }`}
             >
               {tab.icon}
