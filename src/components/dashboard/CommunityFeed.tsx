@@ -133,96 +133,42 @@ export function CommunityFeed() {
       }
     } else if (payload.eventType === 'DELETE') {
       setPosts(prevPosts => prevPosts.filter(post => post.id !== payload.old.id));
-    } else if (payload.eventType === 'UPDATE') {
-      // Fetch updated post data
-      const { data: updatedPost } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles:user_id (
-            id,
-            name,
-            username,
-            avatar,
-            email,
-            created_at
-          ),
-          likes (
-            id,
-            user_id
-          ),
-          comments (
-            id,
-            content,
-            created_at,
-            user_id,
-            profiles:user_id (
-              name,
-              username,
-              avatar
-            )
-          )
-        `)
-        .eq('id', payload.new.id)
-        .single();
-
-      if (updatedPost) {
-        setPosts(prevPosts => 
-          prevPosts.map(post => 
-            post.id === updatedPost.id ? updatedPost : post
-          )
-        );
-      }
     }
   };
 
   const handleLikeChange = async (payload: any) => {
-    const postId = payload.new.post_id;
-    
-    // Fetch updated post data
-    const { data: updatedPost } = await supabase
-      .from('posts')
-      .select(`
-        *,
-        profiles:user_id (
-          id,
-          name,
-          username,
-          avatar,
-          email,
-          created_at
-        ),
-        likes (
-          id,
-          user_id
-        ),
-        comments (
-          id,
-          content,
-          created_at,
-          user_id,
-          profiles:user_id (
-            name,
-            username,
-            avatar
-          )
-        )
-      `)
-      .eq('id', postId)
-      .single();
+    if (!currentUser) return;
 
-    if (updatedPost) {
-      setPosts(prevPosts => 
-        prevPosts.map(post => 
-          post.id === postId ? updatedPost : post
-        )
-      );
-    }
+    const postId = payload.new?.post_id || payload.old?.post_id;
+    if (!postId) return;
+
+    // Update posts state based on like change
+    setPosts(prevPosts => 
+      prevPosts.map(post => {
+        if (post.id === postId) {
+          if (payload.eventType === 'INSERT') {
+            // Add new like
+            return {
+              ...post,
+              likes: [...post.likes, { id: payload.new.id, user_id: payload.new.user_id }]
+            };
+          } else if (payload.eventType === 'DELETE') {
+            // Remove like
+            return {
+              ...post,
+              likes: post.likes.filter(like => like.id !== payload.old.id)
+            };
+          }
+        }
+        return post;
+      })
+    );
   };
 
   const handleCommentChange = async (payload: any) => {
-    const postId = payload.new.post_id;
-    
+    const postId = payload.new?.post_id || payload.old?.post_id;
+    if (!postId) return;
+
     // Fetch updated post data
     const { data: updatedPost } = await supabase
       .from('posts')
@@ -336,26 +282,40 @@ export function CommunityFeed() {
         const likeToDelete = post?.likes.find(like => like.user_id === currentUser.id);
         if (!likeToDelete) return;
 
-        const { error } = await supabase
-          .from('likes')
-          .delete()
-          .eq('id', likeToDelete.id);
-
-        if (error) throw error;
-
         // Optimistically update UI
         setPosts(prevPosts => 
           prevPosts.map(p => {
             if (p.id === postId) {
               return {
                 ...p,
-                likes: p.likes.filter(like => like.user_id !== currentUser.id)
+                likes: p.likes.filter(like => like.id !== likeToDelete.id)
               };
             }
             return p;
           })
         );
+
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('id', likeToDelete.id);
+
+        if (error) throw error;
       } else {
+        // Optimistically update UI
+        const tempLikeId = `temp-${Date.now()}`;
+        setPosts(prevPosts => 
+          prevPosts.map(p => {
+            if (p.id === postId) {
+              return {
+                ...p,
+                likes: [...p.likes, { id: tempLikeId, user_id: currentUser.id }]
+              };
+            }
+            return p;
+          })
+        );
+
         const { data: newLike, error } = await supabase
           .from('likes')
           .insert({ post_id: postId, user_id: currentUser.id })
@@ -364,13 +324,15 @@ export function CommunityFeed() {
 
         if (error) throw error;
 
-        // Optimistically update UI
+        // Update with real like ID
         setPosts(prevPosts => 
           prevPosts.map(p => {
             if (p.id === postId) {
               return {
                 ...p,
-                likes: [...p.likes, newLike]
+                likes: p.likes.map(like => 
+                  like.id === tempLikeId ? newLike : like
+                )
               };
             }
             return p;
@@ -384,6 +346,8 @@ export function CommunityFeed() {
         title: 'Error',
         description: 'Failed to update like'
       });
+      // Revert optimistic update on error
+      fetchPosts();
     }
   };
 
