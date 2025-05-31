@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, MessageSquare, User, ArrowLeft, Info } from 'lucide-react';
+import { Send, MessageSquare, User, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Friend {
@@ -38,7 +36,6 @@ export function Messages() {
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
-  const [showInfo, setShowInfo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -287,11 +284,11 @@ export function Messages() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto relative h-[calc(100vh-60px)]">
-        <div className={`w-full md:w-1/3 border-r flex flex-col ${selectedFriend ? 'hidden md:flex' : ''}`}>
+        <div className={`w-full md:w-1/3 border-r flex flex-col h-full ${selectedFriend ? 'hidden md:flex' : ''}`}>
           <div className="p-3 border-b bg-muted/30">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              <h3 className="font-pixelated text-sm font-semibold">Contacts ({friends.length})</h3>
+              <h3 className="font-pixelated text-sm font-semibold">Messages</h3>
             </div>
           </div>
           <ScrollArea className="flex-1">
