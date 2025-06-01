@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 
-type Theme = 'light' | 'dark' | 'win95';
+type Theme = 'light' | 'dark' | 'win95' | 'ocean' | 'sunset' | 'forest';
 
 interface ThemeStore {
   theme: Theme;
@@ -13,7 +13,7 @@ interface ThemeStore {
 // Create a custom storage object that syncs with both localStorage and database
 const customStorage = {
   getItem: async (name: string): Promise<string | null> => {
-    // First try to get from localStorage
+    // First try to get from localStorage for instant load
     const localTheme = localStorage.getItem(name);
     if (localTheme) return localTheme;
 
@@ -37,15 +37,14 @@ const customStorage = {
       console.error('Error fetching theme from database:', error);
     }
 
-    // Default to light theme if nothing is found
     return JSON.stringify({ state: { theme: 'light' } });
   },
 
   setItem: async (name: string, value: string): Promise<void> => {
-    // Save to localStorage
+    // Save to localStorage first for instant feedback
     localStorage.setItem(name, value);
 
-    // Save to database if user is logged in
+    // Then save to database if user is logged in
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -71,7 +70,7 @@ export const useTheme = create<ThemeStore>()(
       theme: 'light',
       setTheme: async (theme) => {
         const root = window.document.documentElement;
-        root.classList.remove('light', 'dark', 'win95');
+        root.classList.remove('light', 'dark', 'win95', 'ocean', 'sunset', 'forest');
         root.classList.add(theme);
         set({ theme });
       },
