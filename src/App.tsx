@@ -118,15 +118,15 @@ const App = () => {
             {/* Public Routes */}
             <Route 
               path="/" 
-              element={session ? <Navigate to="/dashboard" replace /> : <Index />} 
+              element={session ? <Navigate to="/dashboard\" replace /> : <Index />} 
             />
             <Route 
               path="/login" 
-              element={session ? <Navigate to="/dashboard" replace /> : <Login />} 
+              element={session ? <Navigate to="/dashboard\" replace /> : <Login />} 
             />
             <Route 
               path="/register" 
-              element={session ? <Navigate to="/dashboard" replace /> : <Register />} 
+              element={session ? <Navigate to="/dashboard\" replace /> : <Register />} 
             />
             
             {/* Protected Routes */}
