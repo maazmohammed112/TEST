@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { useNotifications } from "@/hooks/use-notifications";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { useTheme } from "@/hooks/use-theme";
 
 // Pages
 import Index from "./pages/Index";
@@ -30,6 +31,7 @@ const App = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { setupAllNotifications } = useNotifications();
+  const { setTheme } = useTheme();
   
   useEffect(() => {
     const faviconLink = document.querySelector("link[rel*='icon']") || document.createElement('link');
@@ -43,6 +45,18 @@ const App = () => {
     
     if (session) {
       cleanupNotifications = setupAllNotifications(session.user.id);
+      
+      // Load user's theme preference from database
+      supabase
+        .from('profiles')
+        .select('theme_preference')
+        .eq('id', session.user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.theme_preference) {
+            setTheme(data.theme_preference);
+          }
+        });
     }
     
     return () => {
@@ -50,7 +64,7 @@ const App = () => {
         cleanupNotifications();
       }
     };
-  }, [session, setupAllNotifications]);
+  }, [session, setupAllNotifications, setTheme]);
   
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -111,15 +125,15 @@ const App = () => {
             {/* Public Routes */}
             <Route 
               path="/" 
-              element={session ? <Navigate to="/dashboard\" replace /> : <Index />} 
+              element={session ? <Navigate to="/dashboard" replace /> : <Index />} 
             />
             <Route 
               path="/login" 
-              element={session ? <Navigate to="/dashboard\" replace /> : <Login />} 
+              element={session ? <Navigate to="/dashboard" replace /> : <Login />} 
             />
             <Route 
               path="/register" 
-              element={session ? <Navigate to="/dashboard\" replace /> : <Register />} 
+              element={session ? <Navigate to="/dashboard" replace /> : <Register />} 
             />
             
             {/* Protected Routes */}
