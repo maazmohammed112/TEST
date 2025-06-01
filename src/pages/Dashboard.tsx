@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { CommunityFeed } from '@/components/dashboard/CommunityFeed';
 import { StoriesContainer } from '@/components/stories/StoriesContainer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, Image as ImageIcon, X, ArrowUp } from 'lucide-react';
+import { Send, Image as ImageIcon, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,34 +15,8 @@ export function Dashboard() {
   const [isPosting, setIsPosting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (scrollAreaRef.current) {
-        const scrollTop = scrollAreaRef.current.scrollTop;
-        setShowScrollTop(scrollTop > 500);
-      }
-    };
-
-    const scrollArea = scrollAreaRef.current;
-    if (scrollArea) {
-      scrollArea.addEventListener('scroll', handleScroll);
-      return () => scrollArea.removeEventListener('scroll', handleScroll);
-    }
-  }, []);
-
-  const scrollToTop = () => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    }
-  };
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -158,12 +132,12 @@ export function Dashboard() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto relative h-[calc(100vh-60px)]">
+        {/* Stories Container - Fixed at top */}
         <StoriesContainer />
         
-        <ScrollArea 
-          ref={scrollAreaRef}
-          className="h-[calc(100vh-180px)] px-2"
-        >
+        {/* Scrollable Content Area */}
+        <ScrollArea className="h-[calc(100vh-180px)] px-2">
+          {/* Post Box */}
           <Card className="mb-4 card-gradient animate-fade-in shadow-lg border-2 border-social-green/10">
             <CardContent className="p-4">
               <div className="space-y-4">
@@ -176,6 +150,7 @@ export function Dashboard() {
                   disabled={isPosting}
                 />
                 
+                {/* Image Preview */}
                 {imagePreview && (
                   <div className="relative rounded-lg overflow-hidden border border-social-green/20">
                     <img
@@ -232,17 +207,8 @@ export function Dashboard() {
             </CardContent>
           </Card>
           
+          {/* Feed */}
           <CommunityFeed />
-
-          {showScrollTop && (
-            <Button
-              onClick={scrollToTop}
-              className="fixed bottom-20 right-4 h-10 w-10 rounded-full bg-social-green hover:bg-social-light-green text-white shadow-lg animate-fade-in z-50"
-              size="icon"
-            >
-              <ArrowUp className="h-5 w-5" />
-            </Button>
-          )}
         </ScrollArea>
       </div>
     </DashboardLayout>
