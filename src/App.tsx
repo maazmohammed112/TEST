@@ -31,9 +31,14 @@ const App = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { setupAllNotifications } = useNotifications();
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   
   useEffect(() => {
+    // Apply theme immediately on mount
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark', 'win95');
+    root.classList.add(theme);
+
     const faviconLink = document.querySelector("link[rel*='icon']") || document.createElement('link');
     faviconLink.setAttribute('rel', 'shortcut icon');
     faviconLink.setAttribute('href', '/lovable-uploads/d215e62c-d97d-4600-a98e-68acbeba47d0.png');
@@ -45,18 +50,6 @@ const App = () => {
     
     if (session) {
       cleanupNotifications = setupAllNotifications(session.user.id);
-      
-      // Load user's theme preference from database
-      supabase
-        .from('profiles')
-        .select('theme_preference')
-        .eq('id', session.user.id)
-        .single()
-        .then(({ data }) => {
-          if (data?.theme_preference) {
-            setTheme(data.theme_preference);
-          }
-        });
     }
     
     return () => {
@@ -64,7 +57,7 @@ const App = () => {
         cleanupNotifications();
       }
     };
-  }, [session, setupAllNotifications, setTheme]);
+  }, [session, setupAllNotifications, theme, setTheme]);
   
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -125,15 +118,15 @@ const App = () => {
             {/* Public Routes */}
             <Route 
               path="/" 
-              element={session ? <Navigate to="/dashboard\" replace /> : <Index />} 
+              element={session ? <Navigate to="/dashboard" replace /> : <Index />} 
             />
             <Route 
               path="/login" 
-              element={session ? <Navigate to="/dashboard\" replace /> : <Login />} 
+              element={session ? <Navigate to="/dashboard" replace /> : <Login />} 
             />
             <Route 
               path="/register" 
-              element={session ? <Navigate to="/dashboard\" replace /> : <Register />} 
+              element={session ? <Navigate to="/dashboard" replace /> : <Register />} 
             />
             
             {/* Protected Routes */}

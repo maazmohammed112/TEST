@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 
 type Theme = 'light' | 'dark' | 'win95';
@@ -10,6 +10,61 @@ interface ThemeStore {
   confirmThemeChange: (theme: Theme) => Promise<boolean>;
 }
 
+// Create a custom storage object that syncs with both localStorage and database
+const customStorage = {
+  getItem: async (name: string): Promise<string | null> => {
+    // First try to get from localStorage
+    const localTheme = localStorage.getItem(name);
+    if (localTheme) return localTheme;
+
+    // If not in localStorage, try to get from database
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('theme_preference')
+          .eq('id', user.id)
+          .single();
+        
+        if (data?.theme_preference) {
+          // Save to localStorage for faster access next time
+          localStorage.setItem(name, JSON.stringify({ state: { theme: data.theme_preference } }));
+          return JSON.stringify({ state: { theme: data.theme_preference } });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching theme from database:', error);
+    }
+
+    // Default to light theme if nothing is found
+    return JSON.stringify({ state: { theme: 'light' } });
+  },
+
+  setItem: async (name: string, value: string): Promise<void> => {
+    // Save to localStorage
+    localStorage.setItem(name, value);
+
+    // Save to database if user is logged in
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const theme = JSON.parse(value).state.theme;
+        await supabase
+          .from('profiles')
+          .update({ theme_preference: theme })
+          .eq('id', user.id);
+      }
+    } catch (error) {
+      console.error('Error saving theme to database:', error);
+    }
+  },
+
+  removeItem: (name: string): void => {
+    localStorage.removeItem(name);
+  },
+};
+
 export const useTheme = create<ThemeStore>()(
   persist(
     (set) => ({
@@ -18,16 +73,6 @@ export const useTheme = create<ThemeStore>()(
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark', 'win95');
         root.classList.add(theme);
-        
-        // Save theme to database if user is logged in
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase
-            .from('profiles')
-            .update({ theme_preference: theme })
-            .eq('id', user.id);
-        }
-        
         set({ theme });
       },
       confirmThemeChange: async (theme) => {
@@ -54,7 +99,6 @@ export const useTheme = create<ThemeStore>()(
           
           document.body.appendChild(dialog);
           
-          // Add global resolve function
           (window as any).resolveTheme = (confirmed: boolean) => {
             delete (window as any).resolveTheme;
             resolve(confirmed);
@@ -64,6 +108,8 @@ export const useTheme = create<ThemeStore>()(
     }),
     {
       name: 'theme-storage',
+      storage: createJSONStorage(() => customStorage),
+      partialize: (state) => ({ theme: state.theme }),
     }
   )
 );
